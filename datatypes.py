@@ -1,7 +1,9 @@
-from scope import Scope
+from nodes import ArgumentNode, BuiltInFunctionNode, ExpressionsNode, KeywordArgumentNode, VarAccessNode
+from time import time
 
 class DataType:
-    def __init__(self, value):
+    def __init__(self, scope, value = None):
+        self.scope = scope
         self.value = value
 
 
@@ -10,8 +12,8 @@ class DataType:
 
 
 class Number(DataType):
-    def __init__(self, value):
-        super().__init__(value)
+    def __init__(self, scope, value):
+        super().__init__(scope, value)
 
 
     def __pow__(self, other):
@@ -127,8 +129,8 @@ class Number(DataType):
 
 
 class Bool(DataType):
-    def __init__(self, value):
-        super().__init__(value)
+    def __init__(self, scope, value):
+        super().__init__(scope, value)
 
 
     def __eq__(self, other):
@@ -150,8 +152,8 @@ class Bool(DataType):
 
 
 class String(DataType):
-    def __init__(self, value):
-        super().__init__(value)
+    def __init__(self, scope, value):
+        super().__init__(scope, value)
 
 
     def __eq__(self, other):
@@ -179,8 +181,14 @@ class String(DataType):
 
 
 class Array(DataType):
-    def __init__(self, value):
-        super().__init__(value)
+    def __init__(self, scope, value):
+        super().__init__(scope, value)
+        self.scope.assign("Append", BuiltIn.assign(self.scope, "Append", ["value"], [], self.append))
+
+
+    def append(self, scope):
+        value = scope.access("value")
+        self.value.append(value)
 
 
     def copy(self):
@@ -220,7 +228,8 @@ class Array(DataType):
 
 
 class Function(DataType):
-    def __init__(self, name, args, expressions):
+    def __init__(self, scope, name, args, expressions):
+        self.scope = scope
         self.name = name
         self.args = args
         self.expressions = expressions
@@ -235,7 +244,8 @@ class Function(DataType):
 
 
 class Class(DataType):
-    def __init__(self, name, args, expressions):
+    def __init__(self, scope, name, args, expressions):
+        self.scope = scope
         self.name = name
         self.args = args
         self.expressions = expressions
@@ -246,9 +256,9 @@ class Class(DataType):
 
     
 class Instance(DataType):
-    def __init__(self, name, scope):
-        self.name = name
+    def __init__(self, scope, name):
         self.scope = scope
+        self.name = name
         self.scope.assign("this", self)
 
 
@@ -259,3 +269,44 @@ class Instance(DataType):
 class Null(DataType):
     def __repr__(self):
         return f"null"
+
+
+class BuiltIn:
+    @staticmethod
+    def assign(scope, func_name, args, kw_args, func):
+        total_args = []
+
+        for a in args:
+            total_args.append(ArgumentNode(VarAccessNode(a)))
+
+        for kw in kw_args:
+            total_args.append(KeywordArgumentNode(kw[0], kw[1]))
+
+        return Function(scope, func_name, total_args, ExpressionsNode([BuiltInFunctionNode(func)]))
+
+
+    @staticmethod
+    def print(scope):
+        value = scope.access("value")
+        print(value)
+
+
+    @staticmethod
+    def timer(scope):
+        return Number(scope, time())
+
+    
+    @staticmethod
+    def range(scope):
+        start = scope.access("start")
+        finish = scope.access("finish")
+        step = scope.access("step")
+
+        if finish.value == None:
+            finish = start
+            start = Number(0)
+
+        if step.value == 0:
+            raise Exception("'step' argument must be non-zero.")
+        
+        return range(start.value, finish.value, step.value)

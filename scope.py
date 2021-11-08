@@ -9,6 +9,8 @@ class Scope:
 
 
     def access(self, key):
+        print(self.table)
+
         if key not in self.table:
             raise Exception(f"Variable '{key}' not declared in current scope.")
 
@@ -21,6 +23,14 @@ class Scope:
 
     def copy(self):
         return Scope(dict(self.table))
+
+
+    def items(self):
+        return self.table.items()
+
+
+    def __iter__(self):
+        yield from self.table
 
 
     def __repr__(self):

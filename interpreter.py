@@ -1,10 +1,12 @@
-from builtin import BuiltIn
 from datatypes import *
 from nodes import *
 from scope import Scope
 
 global_scope = Scope()
-global_scope.assign("Print", BuiltIn.assign("Print", ["value"], BuiltIn.print))
+global_scope.assign("Print", BuiltIn.assign(global_scope, "Print", ["value"], [], BuiltIn.print))
+global_scope.assign("Timer", BuiltIn.assign(global_scope, "Timer", [], [], BuiltIn.timer))
+
+global_scope.assign("Range", BuiltIn.assign(global_scope, "Range", ["start"], [("finish", Null(global_scope)), ("step", Number(global_scope, 1))], BuiltIn.range))
 
 class Interpreter:
     def __init__(self, tree):
@@ -38,10 +40,10 @@ class Interpreter:
                 identifier = self.visit(n.node, scope)
 
                 if identifier == None:
-                    raise Exception(f"Accessor denied.")
+                    raise Exception(f"Cannot use accessor for null.")
 
-                if isinstance(identifier, Instance):
-                    return self.visit(n.index_expression, identifier.scope)
+                if isinstance(identifier, Instance) or issubclass(type(identifier), DataType):
+                    return self.visit(n.index_expression, Scope({k: v for k, v in identifier.scope.items() if k not in scope}))
                 else:
                     index_expression = self.visit(n.index_expression, scope)
                     return identifier[index_expression]
@@ -64,6 +66,7 @@ class Interpreter:
                     raise Exception(f"Trying to access a variable that's not a function or class.")
 
                 args = [x for x in identifier.args if isinstance(x, ArgumentNode)]
+                print(args)
                 kw_args = [x for x in identifier.args if isinstance(x, KeywordArgumentNode)]
                 passed_args = n.args
                 arg_number = len(args) + len(kw_args)
@@ -104,7 +107,7 @@ class Interpreter:
                     scope.assign(kw_arg.name, self.visit(kw_arg.expression, scope))
                 
                 if isinstance(identifier, Class):
-                    instance = Instance(identifier.name, scope)
+                    instance = Instance(scope, identifier.name)
                 else:
                     instance = None
 
@@ -116,6 +119,9 @@ class Interpreter:
                             return value.copy()
                         except:
                             return value
+                    
+                    if isinstance(value, ReturnNode):
+                        return value.expression
 
                 return instance
 
@@ -128,11 +134,11 @@ class Interpreter:
                         for i, v in enumerate(n.value):
                             n.value[i] = self.visit(v, scope)
 
-                        return Array(n.value)
+                        return Array(scope.copy(), n.value)
 
                     case _ if isinstance(n, (FunctionNode, ClassNode)):
                         cast_type = Function if isinstance(n, FunctionNode) else Class
-                        value = cast_type(n.name, n.args, n.expressions)
+                        value = cast_type(scope.copy(), n.name, n.args, n.expressions)
 
                         if n.name != None:
                             scope.assign(n.name, value)
@@ -140,7 +146,7 @@ class Interpreter:
                         return value
 
                     case _ if isinstance(n, NullNode):
-                        return NullNode()
+                        return NullNode(scope.copy())
 
                     case _:
                         cast_type = {
@@ -149,7 +155,7 @@ class Interpreter:
                             StringNode: String
                         }[type(n)]
 
-                        return cast_type(n.value)
+                        return cast_type(scope.copy(), n.value)
 
             case n if issubclass(type(n), BinaryOperationNode):
                 left = self.visit(n.left, scope)
@@ -231,11 +237,10 @@ class Interpreter:
                 return n
 
             case n if isinstance(n, BuiltInFunctionNode):
-                n.expressions(scope)
+                return ReturnNode(n.expressions(scope))
 
             case n:
                 raise Exception(f"Invalid node: {n}")
 
     def run(self):
-        global global_scope
         self.result = self.visit(self.tree, global_scope)
