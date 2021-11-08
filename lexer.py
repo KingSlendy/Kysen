@@ -1,6 +1,6 @@
 import string
 from tokens import *
-from types import NoneType
+
 LETTERS = string.ascii_letters
 DIGITS = string.digits
 LETTERS_DIGITS = LETTERS + DIGITS
@@ -20,16 +20,32 @@ class Lexer:
 
     def advance(self):
         self.position += 1
-        self.current = self.text[self.position] if self.position < len(self.text) else None
+        self.current = self.text[self.position] if -1 < self.position < len(self.text) else None
+
+    
+    def peek(self, offset):
+        pos = self.position + offset
+        return self.text[pos] if -1 < pos < len(self.text) else None
 
 
     def register_token(self, token):
         self.tokens.append(token)
 
     
-    def skip_line(self):
-        while self.current != None and self.current != "\n":
-            self.advance()
+    def comment_skip(self):
+        self.advance()
+
+        if self.current == ">":
+            while self.current != None:
+                if self.current == "<" and self.peek(1) == "#":
+                    self.advance()
+                    self.advance()
+                    break
+
+                self.advance()
+        else:
+            while self.current != None and self.current != "\n":
+                self.advance()
 
 
     def make_double_token(self, char, type1, type2):
@@ -114,7 +130,7 @@ class Lexer:
                     break
 
                 case "#":
-                    self.skip_line()
+                    self.comment_skip()
 
                 case ";":
                     self.register_token(Token(TOKENS.SEMICOLON).set_pos(self.position))

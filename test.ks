@@ -1,14 +1,13 @@
-class Test() {
-    value = 1;
+class Inside() {
+    this.list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 }
 
-func Add(a = 1, b = 1) {
-    return a + b;
+class Outside() {
+    this.inside = Inside();
 }
 
-Print(Add()); # 2
-Print(Add(2)); # 3
-Print(Add(2, 2)); # 4
-Print(Add(b = 10)); # 11
-Print(Add(a = 20)); # 21
-Print(Add(a = 40, b = 40)); # 80
+t = Outside();
+Print(t.inside.list);
+modify = t.inside.list;
+modify[0] = 20;
+Print(t.inside.list);

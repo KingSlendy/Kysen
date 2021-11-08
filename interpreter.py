@@ -36,12 +36,15 @@ class Interpreter:
 
             case n if isinstance(n, AccessorNode):
                 identifier = self.visit(n.node, scope)
-                index_expression = self.visit(n.index_expression, scope)
 
                 if identifier == None:
                     raise Exception(f"Accessor denied.")
 
-                return identifier[index_expression]
+                if isinstance(identifier, Instance):
+                    return self.visit(n.index_expression, identifier.scope)
+                else:
+                    index_expression = self.visit(n.index_expression, scope)
+                    return identifier[index_expression]
 
             case n if isinstance(n, AssignerNode):
                 identifier = self.visit(n.node, scope)
@@ -100,6 +103,11 @@ class Interpreter:
                 for kw_arg in [kw for kw in kw_args if kw.name not in declared_kw_arguments]:
                     scope.assign(kw_arg.name, self.visit(kw_arg.expression, scope))
                 
+                if isinstance(identifier, Class):
+                    instance = Instance(identifier.name, scope)
+                else:
+                    instance = None
+
                 for e in identifier.expressions.expressions:
                     value = self.visit(e, scope)
 
@@ -109,8 +117,7 @@ class Interpreter:
                         except:
                             return value
 
-                if isinstance(identifier, Class):
-                    return Instance(identifier.name, scope)
+                return instance
 
             case n if isinstance(n, ReturnNode):
                 return self.visit(n.expression, scope)
@@ -190,7 +197,6 @@ class Interpreter:
 
             case n if isinstance(n, IfNode):
                 if_condition = self.visit(n.if_condition, scope)
-                scope = scope.copy()
 
                 if if_condition.value:
                     self.visit(n.if_expressions, scope)

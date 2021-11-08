@@ -1,7 +1,7 @@
 from nodes import *
 from tokens import TOKENS
 
-operator_nodes = {
+OPERATOR_NODES = {
     TOKENS.POW: PoweringNode,
     TOKENS.MULT: MultiplicationNode,
     TOKENS.DIV: DivitionNode,
@@ -56,7 +56,7 @@ class Parser:
     def advance(self):
         while True:
             self.position += 1
-            self.current = self.tokens[self.position] if self.position < len(self.tokens) else None
+            self.current = self.tokens[self.position] if -1 < self.position < len(self.tokens) else None
 
             if self.current.type != TOKENS.WHITESPACE:
                 break
@@ -68,7 +68,7 @@ class Parser:
 
         while True:
             pos += 1 if offset > 0 else -1
-            token = self.tokens[pos] if pos < len(self.tokens) else None
+            token = self.tokens[pos] if -1 < pos < len(self.tokens) else None
 
             if token.type == TOKENS.WHITESPACE:
                 continue
@@ -127,6 +127,7 @@ class Parser:
                     node = self.parse_assigners(node, expression)
 
                 return node
+
 
             case TOKENS.KEYWORD:
                 match token.value:
@@ -379,7 +380,7 @@ class Parser:
             operator = self.current
             self.advance()
             right = self.parse_primary_expression(operator_priority)
-            operation_node = operator_nodes[operator.type]
+            operation_node = OPERATOR_NODES[operator.type]
             left = operation_node(left, operator, right)
 
         return left

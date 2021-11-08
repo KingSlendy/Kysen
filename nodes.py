@@ -1,6 +1,3 @@
-from datatypes import DataType
-
-
 class DataTypeNode:
     def __init__(self, value = None):
         self.value = value
@@ -107,6 +104,25 @@ class FunctionAccessNode:
     
     def __repr__(self):
         return f"FUNC ACCESS: {self.node}({self.args})"
+
+
+class PropertyAccessNode:
+    def __init__(self, node):
+        self.node = node
+
+    
+    def __repr__(self):
+        return f"PROPERY ACESS: {self.node}"
+
+
+class PropertyAssignNode:
+    def __init__(self, node, expression):
+        self.node = node
+        self.expression = expression
+
+    
+    def __repr__(self):
+        return f"PROPERY ASSIGN: {self.node} = {self.expression}"
 
 
 class ArgumentNode:

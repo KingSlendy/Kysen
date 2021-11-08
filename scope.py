@@ -15,6 +15,10 @@ class Scope:
         return self.table[key]
 
 
+    def remove(self, key):
+        del self.table[key]
+
+
     def copy(self):
         return Scope(dict(self.table))
 

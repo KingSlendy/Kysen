@@ -1,3 +1,5 @@
+from scope import Scope
+
 class DataType:
     def __init__(self, value):
         self.value = value
@@ -40,14 +42,14 @@ class Number(DataType):
         return NotImplemented
 
 
-    def __div__(self, other):
+    def __truediv__(self, other):
         if isinstance(other, Number):
             return Number(self.value / other.value)
 
         return NotImplemented
 
 
-    def __rdiv__(self, other):
+    def __rtruediv__(self, other):
         if isinstance(other, Number):
             return Number(other.value / self.value)
 
@@ -229,7 +231,7 @@ class Function(DataType):
 
     
     def __repr__(self):
-        return f"func {self.name}({self.args}) {self.expressions}"
+        return f"<function object {self.name}>"
 
 
 class Class(DataType):
@@ -240,17 +242,18 @@ class Class(DataType):
 
 
     def __repr__(self):
-        return f"class {self.name}({self.args}) {self.expressions}"
+        return f"<class object {self.name}>"
 
     
 class Instance(DataType):
     def __init__(self, name, scope):
         self.name = name
         self.scope = scope
+        self.scope.assign("this", self)
 
 
     def __repr__(self):
-        return f"instance {self.name} {{ {self.scope} }}"
+        return f"<instance object {self.name}>"
 
 
 class Null(DataType):
