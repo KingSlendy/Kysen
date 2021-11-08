@@ -3,8 +3,8 @@ from datatypes import *
 from nodes import *
 from scope import Scope
 
-scope = Scope({})
-scope.assign("Print", BuiltIn.assign("Print", ["value"], BuiltIn.print))
+global_scope = Scope()
+global_scope.assign("Print", BuiltIn.assign("Print", ["value"], BuiltIn.print))
 
 class Interpreter:
     def __init__(self, tree):
@@ -104,16 +104,13 @@ class Interpreter:
                     value = self.visit(e, scope)
 
                     if isinstance(e, ReturnNode):
-                        if isinstance(identifier, Class):
-                            raise Exception("Cannot have a 'return' keyword inside a class.")
-
                         try:
                             return value.copy()
                         except:
                             return value
 
                 if isinstance(identifier, Class):
-                    return scope
+                    return Instance(identifier.name, scope)
 
             case n if isinstance(n, ReturnNode):
                 return self.visit(n.expression, scope)
@@ -231,9 +228,8 @@ class Interpreter:
                 n.expressions(scope)
 
             case n:
-                print(type(n))
                 raise Exception(f"Invalid node: {n}")
 
     def run(self):
-        global scope
-        self.result = self.visit(self.tree, scope)
+        global global_scope
+        self.result = self.visit(self.tree, global_scope)

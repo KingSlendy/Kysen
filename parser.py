@@ -1,4 +1,3 @@
-from lexer import WHITESPACE
 from nodes import *
 from tokens import TOKENS
 
@@ -61,6 +60,25 @@ class Parser:
 
             if self.current.type != TOKENS.WHITESPACE:
                 break
+
+    
+    def peek(self, offset):
+        pos = self.position
+        times = 0
+
+        while True:
+            pos += 1 if offset > 0 else -1
+            token = self.tokens[pos] if pos < len(self.tokens) else None
+
+            if token.type == TOKENS.WHITESPACE:
+                continue
+
+            times += 1
+
+            if times >= abs(offset):
+                break
+
+        return token
 
 
     def necessary_token_advance(self, type):
@@ -376,8 +394,8 @@ class Parser:
 
             expressions.append(self.parse_primary_expression())
 
-            if self.current.type == TOKENS.SEMICOLON:
-                self.advance()
+            if self.peek(-1).type != TOKENS.RCURLY:
+                self.necessary_token_advance(TOKENS.SEMICOLON)
 
             if once:
                 break

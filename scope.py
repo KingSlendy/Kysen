@@ -1,24 +1,23 @@
 class Scope:
-    def __init__(self, global_table, local_table = None):
-        self.global_table = global_table
-        self.local_table = local_table if local_table != None else self.global_table
+    def __init__(self, table = {}):
+        self.table = dict(table)
 
 
-    def assign(self, name, value):
-        self.local_table[name] = value
+    def assign(self, key, value):
+        self.table[key] = value
         return value
 
 
-    def access(self, name):
-        if name not in self.local_table:
-            raise Exception(f"Variable '{name}' not declared in current scope.")
+    def access(self, key):
+        if key not in self.table:
+            raise Exception(f"Variable '{key}' not declared in current scope.")
 
-        return self.local_table[name]
+        return self.table[key]
 
 
     def copy(self):
-        return Scope(self.global_table, dict(self.local_table))
+        return Scope(dict(self.table))
 
 
     def __repr__(self):
-        return str(self.local_table)
+        return str(self.table)

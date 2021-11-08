@@ -242,6 +242,16 @@ class Class(DataType):
     def __repr__(self):
         return f"class {self.name}({self.args}) {self.expressions}"
 
+    
+class Instance(DataType):
+    def __init__(self, name, scope):
+        self.name = name
+        self.scope = scope
+
+
+    def __repr__(self):
+        return f"instance {self.name} {{ {self.scope} }}"
+
 
 class Null(DataType):
     def __repr__(self):
