@@ -1,9 +1,18 @@
 import sys
 from runner import Runner
 
+def run(text):
+    #try:
+    compiled = Runner.execute(text)
+
+    if compiled != None:
+        print(compiled)
+    #except Exception as e:
+        #print(e)
+
 def main():
     if len(sys.argv) >= 2:
-        Runner.execute(open(sys.argv[1], "r").read())
+        run(open(sys.argv[1], "r").read())
         return
 
     while True:
@@ -16,13 +25,7 @@ def main():
             case ["exit"]:
                 break
 
-        try:
-            compiled = Runner.execute(text)
-
-            if compiled != None:
-                print(compiled)
-        except Exception as e:
-            print(e)
+        run(text)
 
 
 if __name__ == "__main__":

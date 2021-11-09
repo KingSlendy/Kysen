@@ -46,7 +46,7 @@ class ClassNode(DataTypeNode):
 
 
     def __repr__(self):
-        return f"Class {self.name if self.name != None else '<anonymous>'}({self.args}) {self.expressions}"
+        return f"CLASS {self.name if self.name != None else '<anonymous>'}({self.args}) {self.expressions}"
 
 
 class NullNode(DataTypeNode):
@@ -60,7 +60,7 @@ class VarAssignNode:
 
     
     def __repr__(self):
-        return f"Identifier Assign: {self.name} = {self.expression}"
+        return f"VAR ASSIGN: {self.name} = {self.expression}"
 
 
 class VarAccessNode:
@@ -69,7 +69,7 @@ class VarAccessNode:
 
 
     def __repr__(self):
-        return f"Identifier Access: {self.name}"
+        return f"VAR ACCESS: {self.name}"
 
 
 class AccessorNode:
@@ -79,21 +79,18 @@ class AccessorNode:
 
     
     def __repr__(self):
-        return f"Accessor: ({self.node}, {self.index_expression})"
+        return f"ACCESSOR: ({self.node}, {self.index_expression})"
 
 
 class AssignerNode:
-    def __init__(self, node, index_expression, value_expression = None):
+    def __init__(self, node, index_expression, value_expression):
         self.node = node
         self.index_expression = index_expression
         self.value_expression = value_expression
 
     
     def __repr__(self):
-        if self.value_expression != None:
-            return f"Assigner: ({self.node}, {self.index_expression}) = {self.value_expression}"
-        else:
-            return f"Assigner: ({self.node}, {self.index_expression})"
+        return f"ASSIGNER: ({self.node}, {self.index_expression}) = {self.value_expression}"
 
 
 class FunctionAccessNode:
@@ -107,22 +104,13 @@ class FunctionAccessNode:
 
 
 class PropertyAccessNode:
-    def __init__(self, node):
+    def __init__(self, node, property):
         self.node = node
+        self.property = property
 
     
     def __repr__(self):
-        return f"PROPERY ACESS: {self.node}"
-
-
-class PropertyAssignNode:
-    def __init__(self, node, expression):
-        self.node = node
-        self.expression = expression
-
-    
-    def __repr__(self):
-        return f"PROPERY ASSIGN: {self.node} = {self.expression}"
+        return f"PROPERY ACCESS: ({self.node}, {self.property})"
 
 
 class ArgumentNode:
@@ -263,7 +251,7 @@ class IfNode:
 
 
     def __repr__(self):
-        return f"if ({self.if_condition}) {self.if_expressions} elifs {self.elif_conditions} {self.elif_expressions} else {self.else_expressions}"
+        return f"IF ({self.if_condition}) {self.if_expressions} ELIF {self.elif_conditions} {self.elif_expressions} ELSE {self.else_expressions}"
 
 
 class ForNode:
@@ -274,7 +262,7 @@ class ForNode:
 
 
     def __repr__(self):
-        return f"for ({self.identifier} in {self.iterable}) {self.expressions}"
+        return f"FOR ({self.identifier} in {self.iterable}) {self.expressions}"
 
 
 class ContinueNode:

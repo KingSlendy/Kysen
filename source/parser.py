@@ -179,11 +179,14 @@ class Parser:
                 node = VarAccessNode(name)
 
                 match self.current.type:
-                    case TOKENS.LBRACKET | TOKENS.DOT:
+                    case TOKENS.LBRACKET:
                         node = self.parse_accessors(node)
 
                     case TOKENS.LPAREN:
                         node = self.parse_function_access(node)
+
+                    case TOKENS.DOT:
+                        node = self.parse_property_access(node)
 
                 if self.current.type == TOKENS.EQUALS:
                     self.advance()
@@ -210,6 +213,27 @@ class Parser:
                 raise Exception(f"Invalid token: '{token}'")
 
 
+    def parse_accessors(self, node):
+        accessors = []
+
+        while self.current.type == TOKENS.LBRACKET:
+            self.advance()
+            accessors.append(self.parse_primary_expression())
+            self.necessary_token_advance(TOKENS.RBRACKET)
+
+        for a in accessors:
+            node = AccessorNode(node, a)
+
+        match self.current.type:
+            case TOKENS.LPAREN:
+                node = self.parse_function_access(node)
+            
+            case TOKENS.DOT:
+                node = self.parse_property_access(node)
+
+        return node
+
+    
     def parse_function_access(self, node):
         args = []
         index = 0
@@ -224,8 +248,12 @@ class Parser:
         for a in args:
             node = FunctionAccessNode(node, a)
 
-        if self.current.type == TOKENS.LBRACKET:
-            node = self.parse_accessors(node)
+        match self.current.type:
+            case TOKENS.LBRACKET:
+                node = self.parse_accessors(node)
+            
+            case TOKENS.DOT:
+                node = self.parse_property_access(node)
 
         if self.current.type == TOKENS.EQUALS:
             self.advance()
@@ -235,48 +263,31 @@ class Parser:
         return node
 
 
-    def parse_assigners(self, node, value_expression):
-        current = node
-        expressions = []
-
-        while True:
-            try:
-                expressions.append(current.index_expression)
-                current = current.node
-            except:
-                node = current
-                break
-
-        if len(expressions) > 0:
-            for i, e in enumerate(expressions):
-                node = AssignerNode(node, e, value_expression if i == len(expressions) - 1 else None)
-        else:
-            node = VarAssignNode(node.name, value_expression)
-
-        return node
-
-
-    def parse_accessors(self, node):
+    def parse_property_access(self, node):
         accessors = []
 
-        while self.current.type in (TOKENS.LBRACKET, TOKENS.DOT):
-            check_rbracket = (self.current.type == TOKENS.LBRACKET)
+        while self.current.type == TOKENS.DOT:
             self.advance()
             accessors.append(self.parse_primary_expression())
 
-            if check_rbracket:
-                self.necessary_token_advance(TOKENS.RBRACKET)
-
         for a in accessors:
-            node = AccessorNode(node, a)
+            node = PropertyAccessNode(node, a)
 
-        if self.current.type == TOKENS.LPAREN:
-            node = self.parse_function_access(node)
+        match self.current.type:
+            case TOKENS.LBRACKET:
+                node = self.parse_accessors(node)
+            
+            case TOKENS.LPAREN:
+                node = self.parse_function_access(node)
+            
+        return node
 
-        if len(accessors) > 0:
-            return node
-        else:
-            return node
+
+    def parse_assigners(self, node, value_expression):
+        try:
+            return AssignerNode(node.node, node.index_expression, value_expression)
+        except:
+            return VarAssignNode(node.name, value_expression)
 
 
     def parse_statement(self, first_advance = True, has_condition = True):
@@ -290,7 +301,7 @@ class Parser:
             condition = self.parse_primary_expression()
             self.ignore_token_advance(TOKENS.RPAREN)
 
-        if self.current.type == TOKENS.LCURLY:
+        if self.current.type == TOKENS.LCURLY: # Fix this when just doing {}
             self.advance()
             expressions = self.parse_expressions()
             self.necessary_token_advance(TOKENS.RCURLY)
