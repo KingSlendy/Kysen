@@ -1,7 +1,7 @@
 from nodes import *
 from tokens import TOKENS
 
-OPERATOR_NODES = {
+BINARY_OPERATOR_NODES = {
     TOKENS.POW: PoweringNode,
     TOKENS.MULT: MultiplicationNode,
     TOKENS.DIV: DivitionNode,
@@ -15,6 +15,13 @@ OPERATOR_NODES = {
     TOKENS.NOTEQUALS: NotCompareNode,
     TOKENS.AND: AndNode,
     TOKENS.OR: OrNode
+}
+
+UNARY_OPERATOR_NODES = {
+    TOKENS.ADD: PositiveNode,
+    TOKENS.SUBT: NegativeNode,
+    TOKENS.NOT: NotNode,
+    TOKENS.BITNOT: BitNotNode
 }
 
 def binary_operator_priority(token):
@@ -184,6 +191,12 @@ class Parser:
                     node = self.parse_assigners(node, expression)
 
                 return node
+
+            case t if t in (TOKENS.ADD, TOKENS.SUBT, TOKENS.NOT, TOKENS.BITNOT):
+                self.advance()
+                factor = self.parse_factor()
+                operation_node = UNARY_OPERATOR_NODES[token.type]
+                return operation_node(factor)
 
             case t if t in (TOKENS.INT, TOKENS.FLOAT):
                 self.advance()
@@ -380,8 +393,8 @@ class Parser:
             operator = self.current
             self.advance()
             right = self.parse_primary_expression(operator_priority)
-            operation_node = OPERATOR_NODES[operator.type]
-            left = operation_node(left, operator, right)
+            operation_node = BINARY_OPERATOR_NODES[operator.type]
+            left = operation_node(left, right)
 
         return left
 

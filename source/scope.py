@@ -9,8 +9,6 @@ class Scope:
 
 
     def access(self, key):
-        print(self.table)
-
         if key not in self.table:
             raise Exception(f"Variable '{key}' not declared in current scope.")
 

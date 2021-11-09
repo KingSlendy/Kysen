@@ -23,6 +23,8 @@ class TOKENS(Enum):
     OR = "||"
     BITAND = "&"
     BITOR = "|"
+    NOT = "!"
+    BITNOT = "~"
     LPAREN = "("
     RPAREN = ")"
     LBRACKET = "["

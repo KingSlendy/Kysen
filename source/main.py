@@ -16,13 +16,13 @@ def main():
             case ["exit"]:
                 break
 
-        #try:
-        compiled = Runner.execute(text)
+        try:
+            compiled = Runner.execute(text)
 
-        if compiled != None:
-            print(compiled)
-        #except Exception as e:
-            #print(e)
+            if compiled != None:
+                print(compiled)
+        except Exception as e:
+            print(e)
 
 
 if __name__ == "__main__":

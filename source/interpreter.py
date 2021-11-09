@@ -3,10 +3,12 @@ from nodes import *
 from scope import Scope
 
 global_scope = Scope()
-global_scope.assign("Print", BuiltIn.assign(global_scope, "Print", ["value"], [], BuiltIn.print))
-global_scope.assign("Timer", BuiltIn.assign(global_scope, "Timer", [], [], BuiltIn.timer))
+BuiltIn.class_assign(global_scope, "Test", [], [], BuiltIn.Class_Test)
 
-global_scope.assign("Range", BuiltIn.assign(global_scope, "Range", ["start"], [("finish", Null(global_scope)), ("step", Number(global_scope, 1))], BuiltIn.range))
+BuiltIn.func_assign(global_scope, "Print", ["value"], [], BuiltIn.Func_Print)
+BuiltIn.func_assign(global_scope, "Timer", [], [], BuiltIn.Func_Timer)
+
+BuiltIn.func_assign(global_scope, "Range", ["start"], [("finish", Null(global_scope)), ("step", Number(global_scope, 1))], BuiltIn.Func_Range)
 
 class Interpreter:
     def __init__(self, tree):
@@ -43,7 +45,7 @@ class Interpreter:
                     raise Exception(f"Cannot use accessor for null.")
 
                 if isinstance(identifier, Instance) or issubclass(type(identifier), DataType):
-                    return self.visit(n.index_expression, Scope({k: v for k, v in identifier.scope.items() if k not in scope}))
+                    return self.visit(n.index_expression, Scope({k: v for k, v in identifier.scope.items() if k not in global_scope}))
                 else:
                     index_expression = self.visit(n.index_expression, scope)
                     return identifier[index_expression]
@@ -66,7 +68,6 @@ class Interpreter:
                     raise Exception(f"Trying to access a variable that's not a function or class.")
 
                 args = [x for x in identifier.args if isinstance(x, ArgumentNode)]
-                print(args)
                 kw_args = [x for x in identifier.args if isinstance(x, KeywordArgumentNode)]
                 passed_args = n.args
                 arg_number = len(args) + len(kw_args)
@@ -201,6 +202,22 @@ class Interpreter:
                     case _ if isinstance(n, OrNode):
                         return left or right
 
+            case n if issubclass(type(n), UnaryOperationNode):
+                right = self.visit(n.right, scope)
+
+                match type(n):
+                    case _ if isinstance(n, PositiveNode):
+                        return right
+
+                    case _ if isinstance(n, NegativeNode):
+                        return -right
+
+                    case _ if isinstance(n, NotNode):
+                        return Bool(scope, not right.value)
+
+                    case _ if isinstance(n, BitNotNode):
+                        return ~right
+
             case n if isinstance(n, IfNode):
                 if_condition = self.visit(n.if_condition, scope)
 
@@ -238,6 +255,9 @@ class Interpreter:
 
             case n if isinstance(n, BuiltInFunctionNode):
                 return ReturnNode(n.expressions(scope))
+
+            case n if isinstance(n, BuiltInClassNode):
+                return n.expressions(scope)
 
             case n:
                 raise Exception(f"Invalid node: {n}")

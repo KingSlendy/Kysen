@@ -1,4 +1,4 @@
-from nodes import ArgumentNode, BuiltInFunctionNode, ExpressionsNode, KeywordArgumentNode, VarAccessNode
+from nodes import ArgumentNode, BuiltInClassNode, BuiltInFunctionNode, ExpressionsNode, KeywordArgumentNode, VarAccessNode
 from time import time
 
 class DataType:
@@ -18,7 +18,7 @@ class Number(DataType):
 
     def __pow__(self, other):
         if isinstance(other, Number):
-            return Number(self.value ** other.value)
+            return Number(self.scope, self.value ** other.value)
 
         return NotImplemented
 
@@ -32,100 +32,112 @@ class Number(DataType):
 
     def __mul__(self, other):
         if isinstance(other, Number):
-            return Number(self.value * other.value)
+            return Number(self.scope, self.value * other.value)
 
         return NotImplemented
 
 
     def __rmul__(self, other):
         if isinstance(other, Number):
-            return Number(other.value * self.value)
+            return Number(self.scope, other.value * self.value)
 
         return NotImplemented
 
 
     def __truediv__(self, other):
         if isinstance(other, Number):
-            return Number(self.value / other.value)
+            return Number(self.scope, self.value / other.value)
 
         return NotImplemented
 
 
     def __rtruediv__(self, other):
         if isinstance(other, Number):
-            return Number(other.value / self.value)
+            return Number(self.scope, other.value / self.value)
 
         return NotImplemented
 
 
     def __add__(self, other):
         if isinstance(other, Number):
-            return Number(self.value + other.value)
+            return Number(self.scope, self.value + other.value)
 
         return NotImplemented
             
             
     def __radd__(self, other):
         if isinstance(other, Number):
-            return Number(other.value + self.value)
+            return Number(self.scope, other.value + self.value)
 
         return NotImplemented
 
 
     def __sub__(self, other):
         if isinstance(other, Number):
-            return Number(self.value - other.value)
+            return Number(self.scope, self.value - other.value)
 
         return NotImplemented
             
             
     def __rsub__(self, other):
         if isinstance(other, Number):
-            return Number(other.value - self.value)
+            return Number(self.scope, other.value - self.value)
 
         return NotImplemented
 
 
     def __eq__(self, other):
         if isinstance(other, Number):
-            return Bool(self.value == other.value)
+            return Bool(self.scope, self.value == other.value)
         else:
-            return Bool(False)
+            return Bool(self.scope, False)
 
 
     def __ne__(self, other):
         if isinstance(other, Number):
-            return Bool(self.value != other.value)
+            return Bool(self.scope, self.value != other.value)
         else:
-            return Bool(True)
+            return Bool(self.scope, True)
 
 
     def __lt__(self, other):
         if isinstance(other, Number):
-            return Bool(self.value < other.value)
+            return Bool(self.scope, self.value < other.value)
         else:
-            return Bool(False)
+            return Bool(self.scope, False)
 
 
     def __le__(self, other):
         if isinstance(other, Number):
-            return Bool(self.value <= other.value)
+            return Bool(self.scope, self.value <= other.value)
         else:
-            return Bool(False)
+            return Bool(self.scope, False)
 
 
     def __gt__(self, other):
         if isinstance(other, Number):
-            return Bool(self.value > other.value)
+            return Bool(self.scope, self.value > other.value)
         else:
-            return Bool(False)
+            return Bool(self.scope, False)
 
     
     def __ge__(self, other):
         if isinstance(other, Number):
-            return Bool(self.value >= other.value)
+            return Bool(self.scope, self.value >= other.value)
         else:
-            return Bool(False)
+            return Bool(self.scope, False)
+
+
+    def __pos__(self):
+        return self
+
+    
+    def __neg__(self):
+        return Number(self.scope, -self.value)
+
+
+    def __invert__(self):
+        return Number(self.scope, ~self.value)
 
 
 class Bool(DataType):
@@ -135,16 +147,16 @@ class Bool(DataType):
 
     def __eq__(self, other):
         if isinstance(other, Bool):
-            return Bool(self.value == other.value)
+            return Bool(self.scope, self.value == other.value)
         else:
-            return self.value == other
+            return Bool(self.scope, self.value == other)
 
 
     def __ne__(self, other):
         if isinstance(other, Bool):
-            return Bool(self.value != other.value)
+            return Bool(self.scope, self.value != other.value)
         else:
-            return self.value != other
+            return Bool(self.scope, self.value != other)
 
 
     def __repr__(self):
@@ -158,16 +170,16 @@ class String(DataType):
 
     def __eq__(self, other):
         if isinstance(other, String):
-            return Bool(self.value == other.value)
+            return Bool(self.scope, self.value == other.value)
         else:
-            return Bool(self.value == other)
+            return Bool(self.scope, self.value == other)
 
 
     def __ne__(self, other):
         if isinstance(other, String):
-            return Bool(self.value != other.value)
+            return Bool(self.scope, self.value != other.value)
         else:
-            return Bool(self.value != other)
+            return Bool(self.scope, self.value != other)
 
 
     def __getitem__(self, index):
@@ -183,10 +195,10 @@ class String(DataType):
 class Array(DataType):
     def __init__(self, scope, value):
         super().__init__(scope, value)
-        self.scope.assign("Append", BuiltIn.assign(self.scope, "Append", ["value"], [], self.append))
+        BuiltIn.func_assign(self.scope, "Append", ["value"], [], self.Func_Append)
 
 
-    def append(self, scope):
+    def Func_Append(self, scope):
         value = scope.access("value")
         self.value.append(value)
 
@@ -260,6 +272,12 @@ class Instance(DataType):
         self.scope = scope
         self.name = name
         self.scope.assign("this", self)
+        BuiltIn.func_assign(self.scope, "ToString", [], [], self.Func_ToString)
+
+
+    def Func_ToString(self, scope):
+        obj = scope.access("this")
+        return String(scope, str(obj))
 
 
     def __repr__(self):
@@ -273,7 +291,7 @@ class Null(DataType):
 
 class BuiltIn:
     @staticmethod
-    def assign(scope, func_name, args, kw_args, func):
+    def func_assign(scope, func_name, args, kw_args, func):
         total_args = []
 
         for a in args:
@@ -282,22 +300,46 @@ class BuiltIn:
         for kw in kw_args:
             total_args.append(KeywordArgumentNode(kw[0], kw[1]))
 
-        return Function(scope, func_name, total_args, ExpressionsNode([BuiltInFunctionNode(func)]))
+        scope.assign(func_name, Function(scope, func_name, total_args, ExpressionsNode([BuiltInFunctionNode(func)])))
 
 
     @staticmethod
-    def print(scope):
+    def class_assign(scope, class_name, args, kw_args, func):
+        total_args = []
+
+        for a in args:
+            total_args.append(ArgumentNode(VarAccessNode(a)))
+
+        for kw in kw_args:
+            total_args.append(KeywordArgumentNode(kw[0], kw[1]))
+
+        scope.assign(class_name, Class(scope, class_name, total_args, ExpressionsNode([BuiltInClassNode(func)])))
+
+
+    @staticmethod
+    def Class_Test(scope):
+        scope.assign("value", Number(scope, 10))
+        BuiltIn.func_assign(scope, "PPP", [], [], BuiltIn.Class_Test_Func_PPP)
+
+    
+    @staticmethod
+    def Class_Test_Func_PPP(_):
+        print("Works correctly")
+
+
+    @staticmethod
+    def Func_Print(scope):
         value = scope.access("value")
         print(value)
 
 
     @staticmethod
-    def timer(scope):
+    def Func_Timer(scope):
         return Number(scope, time())
 
     
     @staticmethod
-    def range(scope):
+    def Func_Range(scope):
         start = scope.access("start")
         finish = scope.access("finish")
         step = scope.access("step")

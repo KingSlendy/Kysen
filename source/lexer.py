@@ -6,7 +6,7 @@ DIGITS = string.digits
 LETTERS_DIGITS = LETTERS + DIGITS
 VALID_IDENTIFIER = LETTERS_DIGITS + "_"
 WHITESPACE = string.whitespace
-KEYWORDS = ["true", "false", "null", "if", "elif", "else", "for", "continue", "break", "in", "func", "return", "class", "override"]
+KEYWORDS = ["true", "false", "null", "if", "elif", "else", "for", "continue", "break", "in", "func", "return", "class", "override", "readonly"]
 
 class Lexer:
     def __init__(self, text):
@@ -141,6 +141,9 @@ class Lexer:
 
                 case "=":
                     self.register_token(self.make_double_token("=", TOKENS.EQUALSEQUALS, TOKENS.EQUALS))
+
+                case "!":
+                    self.register_token(self.make_double_token("=", TOKENS.NOTEQUALS, TOKENS.NOT))
 
                 case "<":
                     self.register_token(self.make_double_token("=", TOKENS.LESSEQUALS, TOKENS.LESS))

@@ -154,79 +154,103 @@ class ReturnNode:
 
 
 class BinaryOperationNode:
-    def __init__(self, left, operator, right):
+    def __init__(self, left, right):
         self.left = left
-        self.operator = operator
         self.right = right
 
     
     def __repr__(self):
-        return f"BINOP: ({self.left}, {self.operator}, {self.right})"
+        return f"BINOP {type(self).__name__.replace('Node', '').upper()}: ({self.left}, {self.right})"
 
 
 class PoweringNode(BinaryOperationNode):
-    def __init__(self, left, operator, right):
-        super().__init__(left, operator, right)
+    def __init__(self, left, right):
+        super().__init__(left, right)
 
 
 class MultiplicationNode(BinaryOperationNode):
-    def __init__(self, left, operator, right):
-        super().__init__(left, operator, right)
+    def __init__(self, left, right):
+        super().__init__(left, right)
 
 
 class DivitionNode(BinaryOperationNode):
-    def __init__(self, left, operator, right):
-        super().__init__(left, operator, right)
+    def __init__(self, left, right):
+        super().__init__(left, right)
 
 
 class AdditionNode(BinaryOperationNode):
-    def __init__(self, left, operator, right):
-        super().__init__(left, operator, right)
+    def __init__(self, left, right):
+        super().__init__(left, right)
 
 
 class SubtractionNode(BinaryOperationNode):
-    def __init__(self, left, operator, right):
-        super().__init__(left, operator, right)
+    def __init__(self, left, right):
+        super().__init__(left, right)
 
 
 class CompareNode(BinaryOperationNode):
-    def __init__(self, left, operator, right):
-        super().__init__(left, operator, right)
+    def __init__(self, left, right):
+        super().__init__(left, right)
 
 
 class NotCompareNode(BinaryOperationNode):
-    def __init__(self, left, operator, right):
-        super().__init__(left, operator, right)
+    def __init__(self, left, right):
+        super().__init__(left, right)
 
 
 class LessThanNode(BinaryOperationNode):
-    def __init__(self, left, operator, right):
-        super().__init__(left, operator, right)
+    def __init__(self, left, right):
+        super().__init__(left, right)
 
     
 class LessEqualsNode(BinaryOperationNode):
-    def __init__(self, left, operator, right):
-        super().__init__(left, operator, right)
+    def __init__(self, left, right):
+        super().__init__(left, right)
 
 
 class GreaterThanNode(BinaryOperationNode):
-    def __init__(self, left, operator, right):
-        super().__init__(left, operator, right)
+    def __init__(self, left, right):
+        super().__init__(left, right)
 
     
 class GreaterEqualsNode(BinaryOperationNode):
-    def __init__(self, left, operator, right):
-        super().__init__(left, operator, right)
+    def __init__(self, left, right):
+        super().__init__(left, right)
 
 
 class AndNode(BinaryOperationNode):
-    def __init__(self, left, operator, right):
-        super().__init__(left, operator, right)
+    def __init__(self, left, right):
+        super().__init__(left, right)
 
 
 class OrNode(BinaryOperationNode):
-    def __init__(self, left, operator, right):
-        super().__init__(left, operator, right)
+    def __init__(self, left, right):
+        super().__init__(left, right)
+
+
+class UnaryOperationNode:
+    def __init__(self, right):
+        self.right = right
+
+
+class PositiveNode(UnaryOperationNode):
+    def __init__(self, right):
+        super().__init__(right)
+
+
+class NegativeNode(UnaryOperationNode):
+    def __init__(self, right):
+        super().__init__(right)
+
+
+class NotNode(UnaryOperationNode):
+    def __init__(self, right):
+        super().__init__(right)
+
+
+class BitNotNode(UnaryOperationNode):
+    def __init__(self, right):
+        super().__init__(right)
 
 
 class IfNode:
@@ -263,6 +287,24 @@ class BreakNode:
         return f"BREAK"
 
 
+class BuiltInFunctionNode:
+    def __init__(self, expression):
+        self.expressions = expression
+
+
+    def __repr__(self):
+        return f"BUILTIN FUNC: {self.expression}"
+
+
+class BuiltInClassNode:
+    def __init__(self, expressions):
+        self.expressions = expressions
+
+
+    def __repr__(self):
+        return f"BUILTIN CLASS: {self.expressions}"
+
+
 class ExpressionsNode:
     def __init__(self, expressions):
         self.expressions = expressions
@@ -270,12 +312,3 @@ class ExpressionsNode:
 
     def __repr__(self):
         return f"EXPRS: ({self.expressions})"
-
-
-class BuiltInFunctionNode:
-    def __init__(self, expressions):
-        self.expressions = expressions
-
-
-    def __repr__(self):
-        return f"BUILTIN: {self.expressions}"
