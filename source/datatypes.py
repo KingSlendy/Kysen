@@ -1,4 +1,5 @@
 from nodes import ArgumentNode, BuiltInClassNode, BuiltInFunctionNode, ExpressionsNode, KeywordArgumentNode, VarAccessNode
+from scope import Scope
 from time import time
 
 class DataType:
@@ -242,7 +243,7 @@ class Array(DataType):
 class Function(DataType):
     def __init__(self, scope, name, args, expressions):
         self.scope = scope
-        self.name = name
+        self.name = name if name != None else "#anonymous"
         self.args = args
         self.expressions = expressions
 
@@ -261,10 +262,11 @@ class Class(DataType):
         self.name = name
         self.args = args
         self.expressions = expressions
+        self.static = False
 
 
     def __repr__(self):
-        return f"<class object {self.name}>"
+        return f"<{'static' if self.static else ''}class object {self.name}>"
 
     
 class Instance(DataType):
@@ -300,7 +302,7 @@ class BuiltIn:
         for kw in kw_args:
             total_args.append(KeywordArgumentNode(kw[0], kw[1]))
 
-        scope.assign(func_name, Function(scope, func_name, total_args, ExpressionsNode([BuiltInFunctionNode(func)])))
+        scope.assign(func_name, Function(Scope(scope), func_name, total_args, ExpressionsNode([BuiltInFunctionNode(func)])))
 
 
     @staticmethod
@@ -313,33 +315,37 @@ class BuiltIn:
         for kw in kw_args:
             total_args.append(KeywordArgumentNode(kw[0], kw[1]))
 
-        scope.assign(class_name, Class(scope, class_name, total_args, ExpressionsNode([BuiltInClassNode(func)])))
+        scope.assign(class_name, Class(Scope(scope), class_name, total_args, ExpressionsNode([BuiltInClassNode(func)])))
 
 
     @staticmethod
-    def Class_Test(scope):
-        scope.assign("value", Number(scope, 10))
-        BuiltIn.func_assign(scope, "PPP", [], [], BuiltIn.Class_Test_Func_PPP)
-
-    
-    @staticmethod
-    def Class_Test_Func_PPP(_):
-        print("Works correctly")
+    def static_assign(scope, class_name, func_name, args, kw_args, func):
+        scope = scope.access(class_name).scope
+        BuiltIn.func_assign(scope, func_name, args, kw_args, func)
 
 
     @staticmethod
-    def Func_Print(scope):
+    def Class_Console(_):
+        pass
+        #BuiltIn.func_assign(scope, "Print", ["value"], [], BuiltIn.Class_Global_Func_Print)
+        #BuiltIn.func_assign(scope, "Timer", [], [], BuiltIn.Class_Global_Func_Timer)
+
+        #BuiltIn.func_assign(scope, "Range", ["start"], [("finish", Null(Scope(scope))), ("step", Number(Scope(scope), 1))], BuiltIn.Class_Global_Func_Range)
+
+
+    @staticmethod
+    def Class_Console_Func_Print(scope):
         value = scope.access("value")
         print(value)
 
 
     @staticmethod
-    def Func_Timer(scope):
+    def Class_Global_Func_Timer(scope):
         return Number(scope, time())
 
     
     @staticmethod
-    def Func_Range(scope):
+    def Class_Global_Func_Range(scope):
         start = scope.access("start")
         finish = scope.access("finish")
         step = scope.access("step")

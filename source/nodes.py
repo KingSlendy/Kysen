@@ -275,6 +275,15 @@ class BreakNode:
         return f"BREAK"
 
 
+class StaticNode:
+    def __init__(self, node):
+        self.node = node
+
+
+    def __repr__(self):
+        return f"STATIC: {self.node}"
+
+
 class BuiltInFunctionNode:
     def __init__(self, expression):
         self.expressions = expression

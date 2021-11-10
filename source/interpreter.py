@@ -3,12 +3,10 @@ from nodes import *
 from scope import Scope
 
 global_scope = Scope()
-BuiltIn.class_assign(global_scope, "Test", [], [], BuiltIn.Class_Test)
+#BuiltIn.class_assign(global_scope, "Global", [], [], BuiltIn.Class_Global)
 
-BuiltIn.func_assign(global_scope, "Print", ["value"], [], BuiltIn.Func_Print)
-BuiltIn.func_assign(global_scope, "Timer", [], [], BuiltIn.Func_Timer)
-
-BuiltIn.func_assign(global_scope, "Range", ["start"], [("finish", Null(global_scope)), ("step", Number(global_scope, 1))], BuiltIn.Func_Range)
+BuiltIn.class_assign(global_scope, "Console", [], [], BuiltIn.Class_Console)
+BuiltIn.static_assign(global_scope, "Console", "Print", ["value"], [], BuiltIn.Class_Console_Func_Print)
 
 class Interpreter:
     def __init__(self, tree):
@@ -60,6 +58,9 @@ class Interpreter:
                 if not isinstance(identifier, (Function, Class)):
                     raise Exception(f"Trying to access a variable that's not a function or class.")
 
+                if isinstance(identifier, Class) and identifier.static:
+                    raise Exception(f"Cannot instance the static class '{identifier.name}'.")
+
                 args = [x for x in identifier.args if isinstance(x, ArgumentNode)]
                 kw_args = [x for x in identifier.args if isinstance(x, KeywordArgumentNode)]
                 passed_args = n.args
@@ -71,7 +72,12 @@ class Interpreter:
                 elif passed_arg_number > arg_number:
                     raise Exception(f"Expected {arg_number} total argument(s), got {passed_arg_number}.")
 
-                scope = scope.copy()
+                scope = Scope(scope)
+
+                if isinstance(identifier, Class):
+                    instance = Instance(scope, identifier.name)
+                else:
+                    instance = None
 
                 for i, arg in enumerate(args):
                     parg = passed_args[i]
@@ -98,12 +104,7 @@ class Interpreter:
                         declared_kw_arguments.append(pkw_arg.name)
 
                 for kw_arg in [kw for kw in kw_args if kw.name not in declared_kw_arguments]:
-                    scope.assign(kw_arg.name, self.visit(scope, kw_arg.expression))
-                
-                if isinstance(identifier, Class):
-                    instance = Instance(Scope(), identifier.name)
-                else:
-                    instance = None
+                    scope.assign(kw_arg.name, self.visit(scope, kw_arg.expression))          
 
                 for e in identifier.expressions.expressions:
                     value = self.visit(scope, e)
@@ -120,7 +121,18 @@ class Interpreter:
                 return instance
 
             case n if isinstance(n, PropertyAccessNode):
+                # Fix: Sometimes 'this' not exists in the scope for some reason.
                 identifier = self.visit(scope, n.node)
+                name_check = None
+
+                if isinstance(n.property, VarAccessNode):
+                    name_check = n.property.name
+                elif isinstance(n.property, FunctionAccessNode):
+                    name_check = n.property.node.name
+
+                if name_check != None and name_check not in identifier.scope:
+                    raise Exception(f"{'Instance ' if isinstance(identifier, Instance) else ''}{identifier.name} has no property or function '{name_check}'.")
+
                 value = self.visit(identifier.scope, n.property)
                 return value
 
@@ -133,19 +145,33 @@ class Interpreter:
                         for i, v in enumerate(n.value):
                             n.value[i] = self.visit(scope, v)
 
-                        return Array(scope.copy(), n.value)
+                        return Array(Scope(scope), n.value)
 
                     case _ if isinstance(n, (FunctionNode, ClassNode)):
-                        cast_type = Function if isinstance(n, FunctionNode) else Class
-                        value = cast_type(scope.copy(), n.name, n.args, n.expressions)
+                        if isinstance(n, FunctionNode):
+                            object = Function(Scope(scope), n.name, n.args, n.expressions)
+                        elif isinstance(n, ClassNode):
+                            object = Class(Scope(scope), n.name, n.args, n.expressions)
+                            statics = []
+
+                            for i, e in enumerate(n.expressions.expressions):
+                                if isinstance(e, StaticNode):
+                                    self.visit(object.scope, e.node)
+                                    statics.append(i)
+
+                            statics.sort()
+                            statics.reverse()
+
+                            for s in statics:
+                                del n.expressions.expressions[s]
 
                         if n.name != None:
-                            scope.assign(n.name, value)
+                            scope.assign(n.name, object)
 
-                        return value
+                        return object
 
                     case _ if isinstance(n, NullNode):
-                        return NullNode(scope.copy())
+                        return NullNode(Scope(scope))
 
                     case _:
                         cast_type = {
@@ -154,7 +180,7 @@ class Interpreter:
                             StringNode: String
                         }[type(n)]
 
-                        return cast_type(scope.copy(), n.value)
+                        return cast_type(Scope(scope), n.value)
 
             case n if issubclass(type(n), BinaryOperationNode):
                 left = self.visit(scope, n.left)
@@ -217,7 +243,7 @@ class Interpreter:
                         return ~right
 
             case n if isinstance(n, IfNode):
-                scope = scope.copy()
+                scope = Scope(scope)
                 if_condition = self.visit(scope, n.if_condition)
 
                 if if_condition.value:
@@ -236,12 +262,11 @@ class Interpreter:
                             self.visit(scope, n.else_expressions)
 
             case n if isinstance(n, ForNode):
-                identifier = n.identifier
+                scope = Scope(scope)
                 iterable = self.visit(scope, n.iterable)
-                scope = scope.copy()
 
                 for x in iterable:
-                    scope.assign(identifier, x)
+                    scope.assign(n.identifier, x)
                     value = self.visit(scope, n.expressions)
 
                     if isinstance(value, ContinueNode):
@@ -251,6 +276,19 @@ class Interpreter:
 
             case n if isinstance(n, (ContinueNode, BreakNode, DataType)):
                 return n
+
+            case n if isinstance(n, StaticNode):
+                if not isinstance(n.node, ClassNode):
+                    raise Exception("Cannot use 'static' outside of a class definition.")
+                
+                node = self.visit(scope, n.node)
+                node.static = True
+
+                for e in n.node.expressions.expressions:
+                    if not isinstance(e, StaticNode):
+                        raise Exception("Static classes can't have non-static properties.")
+
+                return node
 
             case n if isinstance(n, BuiltInFunctionNode):
                 return ReturnNode(n.expressions(scope))

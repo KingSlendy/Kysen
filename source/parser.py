@@ -170,6 +170,10 @@ class Parser:
                     case "class":
                         return self.parse_class_statement()
 
+                    case "static":
+                        self.advance()
+                        return StaticNode(self.parse_primary_expression())
+
                     case k:
                         raise Exception(f"Invalid keyword: '{k}'")
 
