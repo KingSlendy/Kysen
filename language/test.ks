@@ -70,14 +70,28 @@ t = Outside();
 t.inside.Message()();
 <#
 
+#>
 class Test() {
     func Inside() {
         return func() {return 0;}
     }
 }
 
+Test.Inside();
 a = [100, 200, 300, 400];
 b = 1;
 Console.Print(a[b]);
 t = Test();
 Console.Print(a[t.Inside()()]);
+<#
+
+a = 10;
+
+if (a == 10) {
+    a = 20;
+    b = 10;
+    Console.Print(a);
+    Console.Print(b);
+}
+
+Console.Print(a);

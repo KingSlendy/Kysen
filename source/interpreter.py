@@ -42,7 +42,7 @@ class Interpreter:
                     return scope.access(n.name)
                 except Exception as ex:
                     if context != None:
-                        raise Exception(f"{'Instance of type ' if context['instance'] else ''}'{context['name']}' has no property or function '{n.name}'.")
+                        raise Exception(f"{'Instance of type ' if context['instance'] else 'Class '}'{context['name']}' has no property or function '{n.name}'.")
                     else:
                         raise ex
 
@@ -142,16 +142,6 @@ class Interpreter:
 
             case n if isinstance(n, PropertyAccessNode):
                 identifier = self.visit(context, scope, n.node)
-                #name_check = None
-
-                #if isinstance(n.property, VarAccessNode):
-                #    name_check = n.property.name
-                #elif isinstance(n.property, FunctionAccessNode):
-                #    print(n.property)
-                #    name_check = n.property.node.name
-
-                #if name_check != None and name_check not in identifier.scope:
-                #    raise Exception(f"{'Instance ' if isinstance(identifier, Instance) else ''}{identifier.name} has no property or function '{name_check}'.")
 
                 if last_scope == None:
                     last_scope = scope

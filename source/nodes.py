@@ -265,6 +265,16 @@ class ForNode:
         return f"FOR ({self.identifier} in {self.iterable}) {self.expressions}"
 
 
+class WhileNode:
+    def __init__(self, condition, expressions):
+        self.condition = condition
+        self.expressions = expressions
+
+
+    def __repr__(self):
+        return f"WHILE ({self.condition}) {self.expressions}"
+
+
 class ContinueNode:
     def __repr__(self):
         return f"CONTINUE"
