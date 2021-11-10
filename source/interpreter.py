@@ -25,9 +25,17 @@ class Interpreter:
                 results = []
 
                 for e in n.expressions:
-                    results.append(self.visit(context, scope, e))
+                    value = self.visit(context, scope, e)
 
-                return None if len(results) > 1 else results[0]
+                    if isinstance(value, (ContinueNode, BreakNode)):
+                        return value
+
+                    results.append(value)
+
+                if len(results) == 1 and isinstance(results[0], DataType):
+                    return results[0]
+                else:
+                    return None
 
             case n if isinstance(n, VarAssignNode):
                 value = self.visit(context, scope, n.expression)
@@ -257,22 +265,15 @@ class Interpreter:
 
             case n if isinstance(n, IfNode):
                 scope = Scope(scope)
-                if_condition = self.visit(context, scope, n.if_condition)
 
-                if if_condition.value:
-                    self.visit(context, scope, n.if_expressions)
+                for c, e in n.if_clauses:
+                    condition = self.visit(context, scope, c)
+
+                    if condition.value:
+                        return self.visit(context, scope, e)
                 else:
-                    elif_conditions = n.elif_conditions
-
-                    for i, c in enumerate(elif_conditions):
-                        condition = self.visit(context, scope, c)
-
-                        if condition.value:
-                            self.visit(context, scope, n.elif_expressions[i])
-                            break
-                    else:
-                        if n.else_expressions != None:
-                            self.visit(context, scope, n.else_expressions)
+                    if n.else_expressions != None:
+                        return self.visit(context, scope, n.else_expressions)
 
             case n if isinstance(n, ForNode):
                 scope = Scope(scope)
@@ -280,6 +281,22 @@ class Interpreter:
 
                 for x in iterable:
                     scope.assign(n.identifier, x)
+                    value = self.visit(context, scope, n.expressions)
+
+                    if isinstance(value, ContinueNode):
+                        continue
+                    elif isinstance(value, BreakNode):
+                        break
+
+            case n if isinstance(n, WhileNode):
+                scope = Scope(scope)
+                
+                while True:
+                    condition = self.visit(context, scope, n.condition)
+
+                    if not condition.value:
+                        break
+
                     value = self.visit(context, scope, n.expressions)
 
                     if isinstance(value, ContinueNode):

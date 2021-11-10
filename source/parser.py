@@ -152,6 +152,9 @@ class Parser:
                     case "for":
                         return self.parse_for_statement()
 
+                    case "while":
+                        return self.parse_while_statement()
+
                     case "continue":
                         self.advance()
                         return ContinueNode()
@@ -316,20 +319,17 @@ class Parser:
 
 
     def parse_if_statement(self):
-        (if_condition, if_expressions) = self.parse_statement()
-        (elif_conditions, elif_expressions) = ([], [])
+        if_clauses = []
 
-        while self.current.matches(TOKENS.KEYWORD, "elif"):
-            (condition, expressions) = self.parse_statement()
-            elif_conditions.append(condition)
-            elif_expressions.append(expressions)
+        while self.current.matches(TOKENS.KEYWORD, "if") or self.current.matches(TOKENS.KEYWORD, "elif"):
+            if_clauses.append(self.parse_statement())
 
         else_expressions = None
 
         if self.current.matches(TOKENS.KEYWORD, "else"):
             (_, else_expressions) = self.parse_statement(has_condition = False)
 
-        return IfNode(if_condition, if_expressions, elif_conditions, elif_expressions, else_expressions)
+        return IfNode(if_clauses, else_expressions)
 
 
     def parse_for_statement(self):
@@ -342,6 +342,11 @@ class Parser:
 
         (_, expressions) = self.parse_statement(first_advance = False, has_condition = False)
         return ForNode(identifier.name, iterable, expressions)
+
+
+    def parse_while_statement(self):
+        (condition, expressions) = self.parse_statement()
+        return WhileNode(condition, expressions)
 
 
     def parse_function_statement(self):

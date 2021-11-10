@@ -242,16 +242,13 @@ class BitNotNode(UnaryOperationNode):
 
 
 class IfNode:
-    def __init__(self, if_condition, if_expressions, elif_conditions, elif_expressions, else_expressions):
-        self.if_condition = if_condition
-        self.if_expressions = if_expressions
-        self.elif_conditions = elif_conditions
-        self.elif_expressions = elif_expressions
+    def __init__(self, if_clauses, else_expressions):
+        self.if_clauses = if_clauses
         self.else_expressions = else_expressions
 
 
     def __repr__(self):
-        return f"IF ({self.if_condition}) {self.if_expressions} ELIF {self.elif_conditions} {self.elif_expressions} ELSE {self.else_expressions}"
+        return f"IF ({self.if_clauses[0]}) {self.if_clauses[1]} ELSE {self.else_expressions}"
 
 
 class ForNode:

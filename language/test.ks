@@ -85,13 +85,52 @@ t = Test();
 Console.Print(a[t.Inside()()]);
 <#
 
-a = 10;
+#>
+a = 40;
 
 if (a == 10) {
     a = 20;
     b = 10;
     Console.Print(a);
     Console.Print(b);
+} elif (a == 20) {
+    a = 30;
+    b = 20;
+    Console.Print(a);
+    Console.Print(b);
+} elif (a == 30) {
+    a = 40;
+    b = 30;
+    Console.Print(a);
+    Console.Print(b);
+} else {
+    a = -10;
+    b = -20;
+    Console.Print(a);
+    Console.Print(b);
 }
 
 Console.Print(a);
+<#
+
+#>
+i = 0;
+
+while (i < 10) {
+    if (i == 5) {
+        i = i + 1;
+        continue;
+    }
+
+    Console.Print(i);
+    i = i + 1;
+}
+<#
+
+for (i in [0, 1, 2, 3, 4, 5]) {
+    if (i == 3) {
+        continue;
+    }
+
+    Console.Print(i);
+}

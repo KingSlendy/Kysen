@@ -6,7 +6,7 @@ DIGITS = string.digits
 LETTERS_DIGITS = LETTERS + DIGITS
 VALID_IDENTIFIER = LETTERS_DIGITS + "_"
 WHITESPACE = string.whitespace
-KEYWORDS = ["true", "false", "null", "if", "elif", "else", "for", "continue", "break", "in", "func", "return", "class", "static"]
+KEYWORDS = ["true", "false", "null", "if", "elif", "else", "for", "in", "while", "continue", "break", "func", "return", "class", "static"]
 
 class Lexer:
     def __init__(self, text):
