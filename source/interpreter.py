@@ -264,8 +264,6 @@ class Interpreter:
                         return ~right
 
             case n if isinstance(n, IfNode):
-                scope = Scope(scope)
-
                 for c, e in n.if_clauses:
                     condition = self.visit(context, scope, c)
 
@@ -276,7 +274,6 @@ class Interpreter:
                         return self.visit(context, scope, n.else_expressions)
 
             case n if isinstance(n, ForNode):
-                scope = Scope(scope)
                 iterable = self.visit(context, scope, n.iterable)
 
                 for x in iterable:
@@ -289,8 +286,6 @@ class Interpreter:
                         break
 
             case n if isinstance(n, WhileNode):
-                scope = Scope(scope)
-                
                 while True:
                     condition = self.visit(context, scope, n.condition)
 

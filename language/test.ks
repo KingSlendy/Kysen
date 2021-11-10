@@ -113,7 +113,7 @@ if (a == 10) {
 Console.Print(a);
 <#
 
-#>
+
 i = 0;
 
 while (i < 10) {
@@ -125,8 +125,9 @@ while (i < 10) {
     Console.Print(i);
     i = i + 1;
 }
-<#
 
+
+#>
 for (i in [0, 1, 2, 3, 4, 5]) {
     if (i == 3) {
         continue;
@@ -134,3 +135,4 @@ for (i in [0, 1, 2, 3, 4, 5]) {
 
     Console.Print(i);
 }
+<#
