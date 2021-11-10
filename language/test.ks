@@ -55,6 +55,7 @@ a.Print = func() {Console.Print("Hello");}
 a.Print();
 <#
 
+#>
 class Inside() {
     func Message() {
         return func() {Console.Print("Hey, it works!");}
@@ -67,3 +68,16 @@ class Outside() {
 
 t = Outside();
 t.inside.Message()();
+<#
+
+class Test() {
+    func Inside() {
+        return func() {return 0;}
+    }
+}
+
+a = [100, 200, 300, 400];
+b = 1;
+Console.Print(a[b]);
+t = Test();
+Console.Print(a[t.Inside()()]);

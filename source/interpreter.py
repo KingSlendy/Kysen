@@ -47,6 +47,7 @@ class Interpreter:
                         raise ex
 
             case n if isinstance(n, AccessorNode):
+                context = None
                 identifier = self.visit(context, scope, n.node)
 
                 if last_scope != None:
