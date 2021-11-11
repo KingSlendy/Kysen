@@ -335,7 +335,7 @@ class Parser:
 
                 self.ignore_token_advance(TOKENS.RPAREN)
 
-        if self.current.type == TOKENS.LCURLY: # Fix this when just doing {}
+        if self.current.type == TOKENS.LCURLY:
             self.advance()
             expressions = self.parse_expressions()
             self.necessary_token_advance(TOKENS.RCURLY)
@@ -454,8 +454,8 @@ class Parser:
                 break
 
             expressions.append(self.parse_binary_expression())
-
-            if self.peek(-1).type != TOKENS.RCURLY:
+        
+            if self.peek(-1).type not in (TOKENS.SEMICOLON, TOKENS.RCURLY):
                 self.necessary_token_advance(TOKENS.SEMICOLON)
 
             if once:

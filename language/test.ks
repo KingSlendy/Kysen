@@ -137,6 +137,7 @@ for (i in [0, 1, 2, 3, 4, 5]) {
 }
 <#
 
+#>
 class Test() {
     this.value = 100;
 }
@@ -147,6 +148,7 @@ outside_call = func() {Console.Print(outside_value);}
 t = Test();
 t.Call = outside_call;
 t.Call();
+<#
 
 
 #>
@@ -162,3 +164,11 @@ t = Test();
 t.Print = func(value) {Print(value);}
 t.Print(1);
 <#
+
+if (2 == 2) {
+    a = 1;
+} else
+    a = 2;
+
+Console.Print(a);
+for (n in [0, 1]) Console.Print(n);
