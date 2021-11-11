@@ -1,44 +1,62 @@
 from nodes import *
 from tokens import TOKENS
 
+UNARY_OPERATOR_NODES = {
+    TOKENS.ADD: PositiveNode,
+    TOKENS.SUBT: NegativeNode,
+    TOKENS.BITNOT: BitNotNode,
+    TOKENS.NOT: NotNode
+}
+
 BINARY_OPERATOR_NODES = {
     TOKENS.POW: PoweringNode,
     TOKENS.MULT: MultiplicationNode,
     TOKENS.DIV: DivitionNode,
+    TOKENS.MOD: ModNode,
     TOKENS.ADD: AdditionNode,
     TOKENS.SUBT: SubtractionNode,
+    TOKENS.LSHIFT: LShiftNode,
+    TOKENS.RSHIFT: RShiftNode,
     TOKENS.LESS: LessThanNode,
     TOKENS.LESSEQUALS: LessEqualsNode,
     TOKENS.GREATER: GreaterThanNode,
     TOKENS.GREATEREQUALS: GreaterEqualsNode,
-    TOKENS.EQUALSEQUALS: CompareNode,
-    TOKENS.NOTEQUALS: NotCompareNode,
+    TOKENS.EQUALSEQUALS: EqualsEqualsNode,
+    TOKENS.NOTEQUALS: NotEqualsNode,
+    TOKENS.BITAND: BitAndNode,
+    TOKENS.BITOR: BitOrNode,
+    TOKENS.BITXOR: BitXorNode,
     TOKENS.AND: AndNode,
     TOKENS.OR: OrNode
-}
-
-UNARY_OPERATOR_NODES = {
-    TOKENS.ADD: PositiveNode,
-    TOKENS.SUBT: NegativeNode,
-    TOKENS.NOT: NotNode,
-    TOKENS.BITNOT: BitNotNode
 }
 
 def binary_operator_priority(token):
     match token.type:
         case TOKENS.POW:
-            return 7
+            return 11
 
-        case TOKENS.MULT | TOKENS.DIV:
-            return 6
+        case TOKENS.MULT | TOKENS.DIV | TOKENS.MOD:
+            return 10
 
         case TOKENS.ADD | TOKENS.SUBT:
-            return 5
+            return 9
+
+        case TOKENS.LSHIFT | TOKENS.RSHIFT:
+            return 8
 
         case TOKENS.LESS | TOKENS.LESSEQUALS | TOKENS.GREATER | TOKENS.GREATEREQUALS:
-            return 4
+            return 7
 
         case TOKENS.EQUALSEQUALS | TOKENS.NOTEQUALS:
+            return 6
+        
+        case TOKENS.BITAND:
+            return 5
+
+        case TOKENS.BITOR:
+            return 4
+
+        case TOKENS.BITXOR:
             return 3
 
         case TOKENS.AND:
@@ -113,7 +131,7 @@ class Parser:
         match token.type:
             case TOKENS.LPAREN:
                 self.advance()
-                expression = self.parse_primary_expression()
+                expression = self.parse_binary_expression()
                 self.necessary_token_advance(TOKENS.RPAREN)
                 return expression
 
@@ -122,7 +140,7 @@ class Parser:
                 values = []
 
                 while self.current.type != TOKENS.RBRACKET:
-                    values.append(self.parse_primary_expression())
+                    values.append(self.parse_binary_expression())
                     self.ignore_token_advance(TOKENS.COMMA)
 
                 self.advance()
@@ -130,11 +148,10 @@ class Parser:
 
                 if self.current.type == TOKENS.EQUALS:
                     self.advance()
-                    expression = self.parse_primary_expression()
+                    expression = self.parse_binary_expression()
                     node = self.parse_assigners(node, expression)
 
                 return node
-
 
             case TOKENS.KEYWORD:
                 match token.value:
@@ -168,14 +185,14 @@ class Parser:
 
                     case "return":
                         self.advance()
-                        return ReturnNode(self.parse_primary_expression())
+                        return ReturnNode(self.parse_binary_expression())
 
                     case "class":
                         return self.parse_class_statement()
 
                     case "static":
                         self.advance()
-                        return StaticNode(self.parse_primary_expression())
+                        return StaticNode(self.parse_binary_expression())
 
                     case k:
                         raise Exception(f"Invalid keyword: '{k}'")
@@ -186,6 +203,12 @@ class Parser:
                 node = VarAccessNode(name)
 
                 match self.current.type:
+                    case TOKENS.ASSIGNMENT:
+                        operation_node = BINARY_OPERATOR_NODES[self.current.value]
+                        self.advance()
+                        right = self.parse_binary_expression()
+                        return operation_node(node, right, assignment = True)
+
                     case TOKENS.LBRACKET:
                         node = self.parse_accessors(node)
 
@@ -197,7 +220,7 @@ class Parser:
 
                 if self.current.type == TOKENS.EQUALS:
                     self.advance()
-                    expression = self.parse_primary_expression()
+                    expression = self.parse_binary_expression()
                     node = self.parse_assigners(node, expression)
 
                 return node
@@ -225,7 +248,7 @@ class Parser:
 
         while self.current.type == TOKENS.LBRACKET:
             self.advance()
-            accessors.append(self.parse_primary_expression())
+            accessors.append(self.parse_binary_expression())
             self.necessary_token_advance(TOKENS.RBRACKET)
 
         for a in accessors:
@@ -262,11 +285,6 @@ class Parser:
             case TOKENS.DOT:
                 node = self.parse_property_access(node)
 
-        if self.current.type == TOKENS.EQUALS:
-            self.advance()
-            expression = self.parse_primary_expression()
-            node = self.parse_assigners(node, expression)
-
         return node
 
 
@@ -275,7 +293,7 @@ class Parser:
 
         while self.current.type == TOKENS.DOT:
             self.advance()
-            accessors.append(self.parse_primary_expression())
+            accessors.append(self.parse_binary_expression())
 
         for a in accessors:
             node = PropertyAccessNode(node, a)
@@ -304,9 +322,18 @@ class Parser:
             self.advance()
 
         if has_condition:
+            has_lparen = (self.current.type == TOKENS.LPAREN)
+
             self.ignore_token_advance(TOKENS.LPAREN)
-            condition = self.parse_primary_expression()
-            self.ignore_token_advance(TOKENS.RPAREN)
+            condition = self.parse_binary_expression()
+
+            if has_lparen:
+                self.necessary_token_advance(TOKENS.RPAREN)
+            else:
+                if self.current.type == TOKENS.RPAREN:
+                    raise Exception("Unexpected ')'.")
+
+                self.ignore_token_advance(TOKENS.RPAREN)
 
         if self.current.type == TOKENS.LCURLY: # Fix this when just doing {}
             self.advance()
@@ -335,9 +362,9 @@ class Parser:
     def parse_for_statement(self):
         self.advance()
         self.ignore_token_advance(TOKENS.LPAREN)
-        identifier = self.parse_primary_expression()
+        identifier = self.parse_binary_expression()
         self.necessary_keyword_advance(TOKENS.KEYWORD, "in")
-        iterable = self.parse_primary_expression()
+        iterable = self.parse_binary_expression()
         self.ignore_token_advance(TOKENS.RPAREN)
 
         (_, expressions) = self.parse_statement(first_advance = False, has_condition = False)
@@ -386,7 +413,7 @@ class Parser:
             if self.current.type == TOKENS.RPAREN:
                 break
 
-            arg = self.parse_primary_expression()
+            arg = self.parse_binary_expression()
 
             if isinstance(arg, VarAssignNode):
                 node = KeywordArgumentNode(arg.name, arg.expression)
@@ -406,13 +433,13 @@ class Parser:
                 self.advance()
 
 
-    def parse_primary_expression(self, priority = 0):
+    def parse_binary_expression(self, priority = 0):
         left = self.parse_factor()
 
         while (operator_priority := binary_operator_priority(self.current)) >= priority and operator_priority != -1:
             operator = self.current
             self.advance()
-            right = self.parse_primary_expression(operator_priority)
+            right = self.parse_binary_expression(operator_priority)
             operation_node = BINARY_OPERATOR_NODES[operator.type]
             left = operation_node(left, right)
 
@@ -426,7 +453,7 @@ class Parser:
             if self.current.type == TOKENS.RCURLY or self.current.type == TOKENS.ENDOFFILE:
                 break
 
-            expressions.append(self.parse_primary_expression())
+            expressions.append(self.parse_binary_expression())
 
             if self.peek(-1).type != TOKENS.RCURLY:
                 self.necessary_token_advance(TOKENS.SEMICOLON)

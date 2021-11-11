@@ -48,15 +48,45 @@ class Lexer:
                 self.advance()
 
 
-    def make_double_token(self, char, type1, type2):
+    def make_double_type_token(self, char_double, type_single, type_double):
         pos_start = self.position
         self.advance()
 
-        if self.current == char:
+        if self.current == char_double:
             self.advance()
-            return Token(type1).set_pos(pos_start, self.position)
+            return Token(type_double).set_pos(pos_start, self.position)
 
-        return Token(type2).set_pos(pos_start, self.position)
+        return Token(type_single).set_pos(pos_start, self.position)
+
+    
+    def make_triple_type_token(self, char_double1, char_double2, type_single, type_double1, type_double2):
+        pos_start = self.position
+        self.advance()
+
+        if self.current == char_double1:
+            self.advance()
+            return Token(type_double1).set_pos(pos_start, self.position)
+        elif self.current == char_double2:
+            self.advance()
+            return Token(type_double2).set_pos(pos_start, self.position)
+
+        return Token(type_single).set_pos(pos_start, self.position)
+
+
+    def make_binary_token(self, char_double, type_single, type_double):
+        pos_start = self.position
+        self.advance()
+        token_type = type_single
+
+        if self.current == char_double:
+            self.advance()
+            token_type = type_double
+        
+        if self.current == "=":
+            self.advance()
+            return Token(TOKENS.ASSIGNMENT, token_type).set_pos(pos_start, self.position)
+
+        return Token(token_type).set_pos(pos_start, self.position)
 
 
     def make_whitespace_token(self):
@@ -139,38 +169,81 @@ class Lexer:
                 case "\"":
                     self.register_token(self.make_string_token())
 
-                case "=":
-                    self.register_token(self.make_double_token("=", TOKENS.EQUALSEQUALS, TOKENS.EQUALS))
-
-                case "!":
-                    self.register_token(self.make_double_token("=", TOKENS.NOTEQUALS, TOKENS.NOT))
-
-                case "<":
-                    self.register_token(self.make_double_token("=", TOKENS.LESSEQUALS, TOKENS.LESS))
-
-                case ">":
-                    self.register_token(self.make_double_token("=", TOKENS.GREATEREQUALS, TOKENS.GREATER))
-
-                case "&":
-                    self.register_token(self.make_double_token("&", TOKENS.AND, TOKENS.BITAND))
-
-                case "|":
-                    self.register_token(self.make_double_token("|", TOKENS.OR, TOKENS.BITOR))
-
                 case "*":
-                    self.register_token(self.make_double_token("*", TOKENS.POW, TOKENS.MULT))
+                    self.register_token(self.make_binary_token("*", TOKENS.MULT, TOKENS.POW))
                 
                 case "/":
-                    self.register_token(Token(TOKENS.DIV).set_pos(self.position))
-                    self.advance()
+                    self.register_token(self.make_binary_token("/", TOKENS.DIV, TOKENS.DIV))
+
+                case "%":
+                    self.register_token(self.make_binary_token(None, TOKENS.MOD, None))
 
                 case "+":
-                    self.register_token(Token(TOKENS.ADD).set_pos(self.position))
-                    self.advance()
+                    self.register_token(self.make_binary_token(None, TOKENS.ADD, None))
 
                 case "-":
-                    self.register_token(Token(TOKENS.SUBT).set_pos(self.position))
+                    self.register_token(self.make_binary_token(None, TOKENS.SUBT, None))
+
+                case "<":
+                    pos_start = self.position
                     self.advance()
+
+                    match self.current:
+                        case "<":
+                            self.advance()
+
+                            if self.current == "=":
+                                self.advance()
+                                token = Token(TOKENS.ASSIGNMENT, TOKENS.LSHIFT).set_pos(pos_start, self.position)
+                            else:
+                                token = Token(TOKENS.LSHIFT).set_pos(pos_start, self.position)
+
+                        case "=":
+                            self.advance()
+                            token = Token(TOKENS.LESSEQUALS)
+
+                        case _:
+                            token = Token(TOKENS.LESS)
+
+                    self.register_token(token)
+
+                case ">":
+                    pos_start = self.position
+                    self.advance()
+
+                    match self.current:
+                        case ">":
+                            self.advance()
+
+                            if self.current == "=":
+                                self.advance()
+                                token = Token(TOKENS.ASSIGNMENT, TOKENS.RSHIFT).set_pos(pos_start, self.position)
+                            else:
+                                token = Token(TOKENS.RSHIFT).set_pos(pos_start, self.position)
+
+                        case "=":
+                            self.advance()
+                            token = Token(TOKENS.GREATEREQUALS)
+
+                        case _:
+                            token = Token(TOKENS.GREATER)
+
+                    self.register_token(token)
+
+                case "=":
+                    self.register_token(self.make_double_type_token("=", TOKENS.EQUALS, TOKENS.EQUALSEQUALS))
+
+                case "!":
+                    self.register_token(self.make_double_type_token("=", TOKENS.NOT, TOKENS.NOTEQUALS))
+
+                case "&":
+                    self.register_token(self.make_binary_token("&", TOKENS.BITAND, TOKENS.AND))
+
+                case "|":
+                    self.register_token(self.make_binary_token("|", TOKENS.BITOR, TOKENS.OR))
+
+                case "^":
+                    self.register_token(self.make_binary_token("??", TOKENS.BITXOR, TOKENS.BITXOR))
 
                 case "(":
                     self.register_token(Token(TOKENS.LPAREN).set_pos(self.position))

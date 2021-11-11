@@ -6,7 +6,7 @@ class Runner:
     @staticmethod
     def execute(text):
         lexer = Lexer(text)
-        #print(lexer.tokens)
+        print(lexer.tokens)
 
         if len(lexer.tokens) == 1:
             return None

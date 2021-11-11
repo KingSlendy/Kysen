@@ -141,10 +141,36 @@ class ReturnNode:
         return f"RETURN {self.expression}"
 
 
+class UnaryOperationNode:
+    def __init__(self, right):
+        self.right = right
+
+
+class PositiveNode(UnaryOperationNode):
+    def __init__(self, right):
+        super().__init__(right)
+
+
+class NegativeNode(UnaryOperationNode):
+    def __init__(self, right):
+        super().__init__(right)
+
+
+class BitNotNode(UnaryOperationNode):
+    def __init__(self, right):
+        super().__init__(right)
+
+
+class NotNode(UnaryOperationNode):
+    def __init__(self, right):
+        super().__init__(right)
+
+
 class BinaryOperationNode:
-    def __init__(self, left, right):
+    def __init__(self, left, right, assignment = False):
         self.left = left
         self.right = right
+        self.assignment = assignment
 
     
     def __repr__(self):
@@ -152,38 +178,43 @@ class BinaryOperationNode:
 
 
 class PoweringNode(BinaryOperationNode):
-    def __init__(self, left, right):
-        super().__init__(left, right)
+    def __init__(self, left, right, assignment = False):
+        super().__init__(left, right, assignment)
 
 
 class MultiplicationNode(BinaryOperationNode):
-    def __init__(self, left, right):
-        super().__init__(left, right)
+    def __init__(self, left, right, assignment = False):
+        super().__init__(left, right, assignment)
 
 
 class DivitionNode(BinaryOperationNode):
-    def __init__(self, left, right):
-        super().__init__(left, right)
+    def __init__(self, left, right, assignment = False):
+        super().__init__(left, right, assignment)
+
+
+class ModNode(BinaryOperationNode):
+    def __init__(self, left, right, assignment = False):
+        super().__init__(left, right, assignment)
 
 
 class AdditionNode(BinaryOperationNode):
-    def __init__(self, left, right):
-        super().__init__(left, right)
+    def __init__(self, left, right, assignment = False):
+        super().__init__(left, right, assignment)
 
 
 class SubtractionNode(BinaryOperationNode):
-    def __init__(self, left, right):
-        super().__init__(left, right)
+    def __init__(self, left, right, assignment = False):
+        super().__init__(left, right, assignment)
 
 
-class CompareNode(BinaryOperationNode):
-    def __init__(self, left, right):
-        super().__init__(left, right)
+class LShiftNode(BinaryOperationNode):
+    def __init__(self, left, right, assignment = False):
+        super().__init__(left, right, assignment)
 
 
-class NotCompareNode(BinaryOperationNode):
-    def __init__(self, left, right):
-        super().__init__(left, right)
+class RShiftNode(BinaryOperationNode):
+    def __init__(self, left, right, assignment = False):
+        super().__init__(left, right, assignment)
 
 
 class LessThanNode(BinaryOperationNode):
@@ -206,6 +237,31 @@ class GreaterEqualsNode(BinaryOperationNode):
         super().__init__(left, right)
 
 
+class EqualsEqualsNode(BinaryOperationNode):
+    def __init__(self, left, right):
+        super().__init__(left, right)
+
+
+class NotEqualsNode(BinaryOperationNode):
+    def __init__(self, left, right):
+        super().__init__(left, right)
+
+
+class BitAndNode(BinaryOperationNode):
+    def __init__(self, left, right, assignment = False):
+        super().__init__(left, right, assignment)
+
+
+class BitOrNode(BinaryOperationNode):
+    def __init__(self, left, right, assignment = False):
+        super().__init__(left, right, assignment)
+
+
+class BitXorNode(BinaryOperationNode):
+    def __init__(self, left, right, assignment = False):
+        super().__init__(left, right, assignment)
+
+
 class AndNode(BinaryOperationNode):
     def __init__(self, left, right):
         super().__init__(left, right)
@@ -214,31 +270,6 @@ class AndNode(BinaryOperationNode):
 class OrNode(BinaryOperationNode):
     def __init__(self, left, right):
         super().__init__(left, right)
-
-
-class UnaryOperationNode:
-    def __init__(self, right):
-        self.right = right
-
-
-class PositiveNode(UnaryOperationNode):
-    def __init__(self, right):
-        super().__init__(right)
-
-
-class NegativeNode(UnaryOperationNode):
-    def __init__(self, right):
-        super().__init__(right)
-
-
-class NotNode(UnaryOperationNode):
-    def __init__(self, right):
-        super().__init__(right)
-
-
-class BitNotNode(UnaryOperationNode):
-    def __init__(self, right):
-        super().__init__(right)
 
 
 class IfNode:

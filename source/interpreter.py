@@ -100,7 +100,7 @@ class Interpreter:
                 elif passed_arg_number > arg_number:
                     raise Exception(f"Expected {arg_number} total argument(s), got {passed_arg_number}.")
 
-                scope = Scope(scope)
+                scope = scope.copy()
 
                 if isinstance(identifier, Class):
                     instance = Instance(scope, identifier.name)
@@ -166,13 +166,13 @@ class Interpreter:
                         for i, v in enumerate(n.value):
                             n.value[i] = self.visit(context, scope, v)
 
-                        return Array(Scope(scope), n.value)
+                        return Array(scope.copy(), n.value)
 
                     case _ if isinstance(n, (FunctionNode, ClassNode)):
                         if isinstance(n, FunctionNode):
-                            object = Function(Scope(scope), n.name, n.args, n.expressions)
+                            object = Function(scope.copy(), n.name, n.args, n.expressions)
                         elif isinstance(n, ClassNode):
-                            object = Class(Scope(scope), n.name, n.args, n.expressions)
+                            object = Class(scope.copy(), n.name, n.args, n.expressions)
                             statics = []
 
                             for i, e in enumerate(n.expressions.expressions):
@@ -192,7 +192,7 @@ class Interpreter:
                         return object
 
                     case _ if isinstance(n, NullNode):
-                        return NullNode(Scope(scope))
+                        return NullNode(scope.copy())
 
                     case _:
                         cast_type = {
@@ -201,9 +201,13 @@ class Interpreter:
                             StringNode: String
                         }[type(n)]
 
-                        return cast_type(Scope(scope), n.value)
+                        return cast_type(scope.copy(), n.value)
 
             case n if issubclass(type(n), BinaryOperationNode):
+                if n.assignment:
+                    scope.assign(n.left.name, self.visit(context, scope, type(n)(n.left, n.right)))
+                    return None
+
                 left = self.visit(context, scope, n.left)
                 right = self.visit(context, scope, n.right)
 
@@ -217,11 +221,20 @@ class Interpreter:
                     case _ if isinstance(n, DivitionNode):
                         return left / right
 
+                    case _ if isinstance(n, ModNode):
+                        return left % right
+
                     case _ if isinstance(n, AdditionNode):
                         return left + right
 
                     case _ if isinstance(n, SubtractionNode):
                         return left - right
+
+                    case _ if isinstance(n, LShiftNode):
+                        return left << right
+
+                    case _ if isinstance(n, RShiftNode):
+                        return left >> right
 
                     case _ if isinstance(n, LessThanNode):
                         return left < right
@@ -235,11 +248,20 @@ class Interpreter:
                     case _ if isinstance(n, GreaterEqualsNode):
                         return left >= right
 
-                    case _ if isinstance(n, CompareNode):
+                    case _ if isinstance(n, EqualsEqualsNode):
                         return left == right
 
-                    case _ if isinstance(n, NotCompareNode):
+                    case _ if isinstance(n, NotEqualsNode):
                         return left != right
+
+                    case _ if isinstance(n, BitAndNode):
+                        return left & right
+
+                    case _ if isinstance(n, BitOrNode):
+                        return left | right
+
+                    case _ if isinstance(n, BitXorNode):
+                        return left ^ right
 
                     case _ if isinstance(n, AndNode):
                         return left and right

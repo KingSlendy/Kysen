@@ -10,8 +10,6 @@ class Scope:
 
 
     def access(self, key):
-        #print(self)
-
         if key not in self.table:
             if self.parent != None:
                 return self.parent.access(key)
@@ -26,7 +24,7 @@ class Scope:
 
 
     def copy(self):
-        return Scope(self.table)
+        return Scope(self)
 
 
     def items(self):
