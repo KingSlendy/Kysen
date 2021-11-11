@@ -255,13 +255,27 @@ class String(DataType):
 
     def __mul__(self, other):
         if isinstance(other, Number):
-            return String(self.value * other.value)
+            return String(self.scope, self.value * other.value)
 
         return NotImplemented
 
 
     def __rmul__(self, other):
         self.__mul__(self, other)
+
+
+    def __add__(self, other):
+        if isinstance(other, String):
+            return String(self.scope, self.value + other.value)
+        
+        return NotImplemented
+
+
+    def __radd__(self, other):
+        if isinstance(other, String):
+            return String(self.scope, other.value + self.value)
+        
+        return NotImplemented
 
 
     def __eq__(self, other):

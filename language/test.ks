@@ -77,7 +77,7 @@ class Test() {
     }
 }
 
-Test.Inside();
+#Test.Inside();
 a = [100, 200, 300, 400];
 b = 1;
 Console.Print(a[b]);
@@ -113,7 +113,7 @@ if (a == 10) {
 Console.Print(a);
 <#
 
-
+#>
 i = 0;
 
 while (i < 10) {
@@ -125,7 +125,7 @@ while (i < 10) {
     Console.Print(i);
     i += 1;
 }
-
+<#
 
 #>
 for (i in [0, 1, 2, 3, 4, 5]) {
@@ -135,4 +135,30 @@ for (i in [0, 1, 2, 3, 4, 5]) {
 
     Console.Print(i);
 }
+<#
+
+class Test() {
+    this.value = 100;
+}
+
+outside_value = 200;
+outside_call = func() {Console.Print(outside_value);}
+
+t = Test();
+t.Call = outside_call;
+t.Call();
+
+
+#>
+func Print(value) {
+    Console.Print(value);
+}
+
+class Test() {
+    this.value = 100;
+}
+
+t = Test();
+t.Print = func(value) {Print(value);}
+t.Print(1);
 <#

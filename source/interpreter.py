@@ -38,7 +38,13 @@ class Interpreter:
                     return None
 
             case n if isinstance(n, VarAssignNode):
-                value = self.visit(context, scope, n.expression)
+                old_scope = scope
+
+                if last_scope != None:
+                    old_scope = last_scope
+                    last_scope = None
+
+                value = self.visit(context, old_scope, n.expression)
 
                 if not issubclass(type(value), DataType):
                     raise Exception(f"Cannot assign a non-type value to variable '{n.name}'.")
@@ -100,12 +106,12 @@ class Interpreter:
                 elif passed_arg_number > arg_number:
                     raise Exception(f"Expected {arg_number} total argument(s), got {passed_arg_number}.")
 
-                scope = scope.copy()
-
                 if isinstance(identifier, Class):
-                    instance = Instance(scope, identifier.name)
+                    instance = Instance(scope.copy(), identifier.name)
+                    scope = instance.scope
                 else:
                     instance = None
+                    scope = identifier.scope.copy()
 
                 for i, arg in enumerate(args):
                     parg = passed_args[i]
@@ -170,7 +176,7 @@ class Interpreter:
 
                     case _ if isinstance(n, (FunctionNode, ClassNode)):
                         if isinstance(n, FunctionNode):
-                            object = Function(scope.copy(), n.name, n.args, n.expressions)
+                            object = Function(scope, n.name, n.args, n.expressions)
                         elif isinstance(n, ClassNode):
                             object = Class(scope.copy(), n.name, n.args, n.expressions)
                             statics = []
@@ -192,7 +198,7 @@ class Interpreter:
                         return object
 
                     case _ if isinstance(n, NullNode):
-                        return NullNode(scope.copy())
+                        return NullNode(scope)
 
                     case _:
                         cast_type = {
