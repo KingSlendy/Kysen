@@ -6,7 +6,6 @@ DIGITS = string.digits
 LETTERS_DIGITS = LETTERS + DIGITS
 VALID_IDENTIFIER = LETTERS_DIGITS + "_"
 WHITESPACE = string.whitespace
-KEYWORDS = ["true", "false", "null", "if", "elif", "else", "for", "in", "while", "continue", "break", "func", "return", "class", "static"]
 
 class Lexer:
     def __init__(self, text):
@@ -109,8 +108,11 @@ class Lexer:
             value += self.current
             self.advance()
 
-        return Token(TOKENS.KEYWORD if value in KEYWORDS else TOKENS.IDENTIFIER, value).set_pos(pos_start, self.position)
-
+        try:
+            keyword = KEYWORDS[value.upper()]
+            return Token(TOKENS.KEYWORD, keyword).set_pos(pos_start, self.position)
+        except KeyError:
+            return Token(TOKENS.IDENTIFIER, value).set_pos(pos_start, self.position)
 
     def make_number_token(self):
         pos_start = self.position

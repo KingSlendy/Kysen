@@ -43,6 +43,25 @@ class TOKENS(Enum):
     ENDOFFILE = "ENDOFFILE"
 
 
+class KEYWORDS(Enum):
+    USING = "using"
+    TRUE = "true"
+    FALSE = "false"
+    NULL = "null"
+    IF = "if"
+    ELIF = "elif"
+    ELSE = "else"
+    FOR = "for"
+    IN = "in"
+    WHILE = "while"
+    CONTINUE = "CONTINUE"
+    BREAK = "break"
+    FUNC = "func"
+    RETURN = "return"
+    CLASS = "class"
+    STATIC = "static"
+    
+
 class Token():
     def __init__(self, type, value = None):
         self.type = type

@@ -1,5 +1,5 @@
 from nodes import *
-from tokens import TOKENS
+from tokens import KEYWORDS, TOKENS
 
 UNARY_OPERATOR_NODES = {
     TOKENS.ADD: PositiveNode,
@@ -113,9 +113,9 @@ class Parser:
         self.advance()
 
     
-    def necessary_keyword_advance(self, type, value):
-        if not self.current.matches(type, value):
-            raise Exception(f"Expected keyword '{value}'")
+    def necessary_keyword_advance(self, keyword):
+        if not self.current.value == keyword:
+            raise Exception(f"Expected keyword '{keyword.value}'")
 
         self.advance()
 
@@ -155,42 +155,42 @@ class Parser:
 
             case TOKENS.KEYWORD:
                 match token.value:
-                    case "true" | "false":
+                    case KEYWORDS.TRUE | KEYWORDS.FALSE:
                         self.advance()
-                        return BoolNode(token.value)
+                        return BoolNode(token.value.value)
 
-                    case "null":
+                    case KEYWORDS.NULL:
                         self.advance()
                         return NullNode()
 
-                    case "if":
+                    case KEYWORDS.IF:
                         return self.parse_if_statement()
 
-                    case "for":
+                    case KEYWORDS.FOR:
                         return self.parse_for_statement()
 
-                    case "while":
+                    case KEYWORDS.WHILE:
                         return self.parse_while_statement()
 
-                    case "continue":
+                    case KEYWORDS.CONTINUE:
                         self.advance()
                         return ContinueNode()
                     
-                    case "break":
+                    case KEYWORDS.BREAK:
                         self.advance()
                         return BreakNode()
 
-                    case "func":
+                    case KEYWORDS.FUNC:
                         return self.parse_function_statement()
 
-                    case "return":
+                    case KEYWORDS.RETURN:
                         self.advance()
                         return ReturnNode(self.parse_binary_expression())
 
-                    case "class":
+                    case KEYWORDS.CLASS:
                         return self.parse_class_statement()
 
-                    case "static":
+                    case KEYWORDS.STATIC:
                         self.advance()
                         return StaticNode(self.parse_binary_expression())
 
@@ -348,12 +348,12 @@ class Parser:
     def parse_if_statement(self):
         if_clauses = []
 
-        while self.current.matches(TOKENS.KEYWORD, "if") or self.current.matches(TOKENS.KEYWORD, "elif"):
+        while self.current.value in (KEYWORDS.IF, KEYWORDS.ELIF):
             if_clauses.append(self.parse_statement())
 
         else_expressions = None
 
-        if self.current.matches(TOKENS.KEYWORD, "else"):
+        if self.current.value == KEYWORDS.ELSE:
             (_, else_expressions) = self.parse_statement(has_condition = False)
 
         return IfNode(if_clauses, else_expressions)
@@ -363,7 +363,7 @@ class Parser:
         self.advance()
         self.ignore_token_advance(TOKENS.LPAREN)
         identifier = self.parse_binary_expression()
-        self.necessary_keyword_advance(TOKENS.KEYWORD, "in")
+        self.necessary_keyword_advance(KEYWORDS.IN)
         iterable = self.parse_binary_expression()
         self.ignore_token_advance(TOKENS.RPAREN)
 
