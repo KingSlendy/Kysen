@@ -61,6 +61,10 @@ class KEYWORDS(Enum):
     RETURN = "return"
     CLASS = "class"
     STATIC = "static"
+    OPLEFT = "opleft"
+    OPRIGHT = "opright"
+    ASSIGN = "assign"
+    ACCESS = "access"
 
 
 class Token():

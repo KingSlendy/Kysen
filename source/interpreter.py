@@ -27,7 +27,7 @@ class Interpreter:
                 for e in n.expressions:
                     value = self.visit(context, scope, e)
 
-                    if isinstance(value, (ContinueNode, BreakNode)):
+                    if isinstance(value, (ReturnNode, ContinueNode, BreakNode)):
                         return value
 
                     results.append(value)
@@ -44,16 +44,26 @@ class Interpreter:
                     old_scope = last_scope
                     last_scope = None
 
-                value = self.visit(context, old_scope, n.expression)
+                assign = self.visit(context, old_scope, n.expression)
 
-                if not issubclass(type(value), DataType):
+                if not issubclass(type(assign), DataType):
                     raise Exception(f"Cannot assign a non-type value to variable '{n.name}'.")
 
-                return scope.assign(n.name, value)
+                value = scope.assign(n.name, assign)
+
+                if isinstance(value, Attribute):
+                    print("There's an attribute.")
+
+                return value
 
             case n if isinstance(n, VarAccessNode):
                 try:
-                    return scope.access(n.name)
+                    value = scope.access(n.name)
+
+                    if isinstance(value, Attribute):
+                        print("There's an attribute.")
+
+                    return value
                 except Exception as ex:
                     if context != None:
                         raise Exception(f"{'Instance of type ' if context['instance'] else 'Class '}'{context['name']}' has no property or function '{n.name}'.")
@@ -83,6 +93,7 @@ class Interpreter:
 
             case n if isinstance(n, FunctionAccessNode):
                 identifier = self.visit(context, scope, n.node)
+                context = None
                 old_scope = scope
 
                 if last_scope != None:
@@ -140,17 +151,33 @@ class Interpreter:
                 for kw_arg in [kw for kw in kw_args if kw.name not in declared_kw_arguments]:
                     scope.assign(kw_arg.name, self.visit(context, old_scope, kw_arg.expression))  
 
-                for e in identifier.expressions.expressions:
-                    value = self.visit(context, scope, e)
+                value = self.visit(context, scope, identifier.expressions)
 
-                    if isinstance(e, ReturnNode):
-                        try:
-                            return value.copy()
-                        except:
-                            return value
+                if isinstance(value, ReturnNode):
+                    if value.expression != None and not isinstance(value.expression, DataType):
+                        value = self.visit(context, scope, value.expression)
+                    else:
+                        value = value.expression
+
+                        if value == None:
+                            value = Null(scope)
                     
-                    if isinstance(value, ReturnNode):
-                        return value.expression
+                    try:
+                        return value.copy()
+                    except:
+                        return value
+
+                #for e in identifier.expressions.expressions:
+                #    value = self.visit(context, scope, e)
+
+                #    if isinstance(e, ReturnNode):
+                #        try:
+                #            return value.copy()
+                #        except:
+                #            return value
+                #    
+                #    if isinstance(value, ReturnNode):
+                #        return value.expression
 
                 return instance
 
@@ -162,7 +189,7 @@ class Interpreter:
 
                 if isinstance(n.property, VarAssignNode):
                     if scope != identifier.scope and not n.property.name in identifier.scope:
-                        raise Exception(f"Cannot assign uninitialized property '{n.property.name}' for instance of '{identifier.name}': '{n.node.name}'.")
+                        raise Exception(f"Cannot assign uninitialized property '{n.property.name}' for '{identifier.name}': '{n.node.name}'.")
 
                 if last_scope == None:
                     last_scope = scope
@@ -170,8 +197,8 @@ class Interpreter:
                 value = self.visit({"name": identifier.name, "instance": isinstance(identifier, Instance)}, identifier.scope, n.property)
                 return value
 
-            case n if isinstance(n, ReturnNode):
-                return self.visit(context, scope, n.expression)
+            #case n if isinstance(n, ReturnNode):
+                #return self.visit(context, scope, n.expression)
 
             case n if issubclass(type(n), DataTypeNode):
                 match n:
@@ -206,6 +233,9 @@ class Interpreter:
 
                     case _ if isinstance(n, NullNode):
                         return NullNode(scope)
+
+                    case _ if isinstance(n, AttributeNode):
+                        return Attribute(n.assign_expressions, n.access_expressions)
 
                     case _:
                         cast_type = {
@@ -315,7 +345,9 @@ class Interpreter:
                     scope.assign(n.identifier, x)
                     value = self.visit(context, scope, n.expressions)
 
-                    if isinstance(value, ContinueNode):
+                    if isinstance(value, ReturnNode):
+                        return value
+                    elif isinstance(value, ContinueNode):
                         continue
                     elif isinstance(value, BreakNode):
                         break
@@ -329,12 +361,14 @@ class Interpreter:
 
                     value = self.visit(context, scope, n.expressions)
 
-                    if isinstance(value, ContinueNode):
+                    if isinstance(value, ReturnNode):
+                        return value
+                    elif isinstance(value, ContinueNode):
                         continue
                     elif isinstance(value, BreakNode):
                         break
 
-            case n if isinstance(n, (ContinueNode, BreakNode, DataType)):
+            case n if isinstance(n, (ReturnNode, ContinueNode, BreakNode, DataType)):
                 return n
 
             case n if isinstance(n, StaticNode):

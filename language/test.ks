@@ -175,8 +175,21 @@ Console.Print(a);
 for (n in [0, 1]) Console.Print(n);
 <#
 
-func Test() {
-
+static class Test() {
+    static func Call() {
+        for (n in [0, 1, 2, 3, 4, 5]) {
+            if (n == 3) {
+                return n;
+            }
+        }
+    }
 }
 
-Test.a = 1;
+Console.Print(a.Call());
+
+# 5 x 4 x 3 x 2 x 1
+# 5 * 4
+
+#a;
+#Console.Print(Math.Factorial);
+#Console.Print(Math.Factorial(5));

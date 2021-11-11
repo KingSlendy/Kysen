@@ -218,6 +218,16 @@ class Parser:
                     case TOKENS.DOT:
                         node = self.parse_property_access(node)
 
+                    case TOKENS.ARROW:
+                        self.advance()
+                        self.necessary_token_advance(TOKENS.LCURLY)
+                        self.necessary_keyword_advance(KEYWORDS.ASSIGN)
+                        (_, assign_expressions) = self.parse_statement(first_advance = False, has_condition = False)
+                        self.necessary_keyword_advance(KEYWORDS.ACCESS)
+                        (_, access_expressions) = self.parse_statement(first_advance = False, has_condition = False)
+                        self.necessary_token_advance(TOKENS.RCURLY)
+                        return AttributeNode(assign_expressions, access_expressions)
+
                 if self.current.type == TOKENS.EQUALS:
                     self.advance()
                     expression = self.parse_binary_expression()
@@ -335,12 +345,18 @@ class Parser:
 
                 self.ignore_token_advance(TOKENS.RPAREN)
 
-        if self.current.type == TOKENS.LCURLY:
-            self.advance()
-            expressions = self.parse_expressions()
-            self.necessary_token_advance(TOKENS.RCURLY)
-        else:
-            expressions = self.parse_expressions(once = True)
+        match self.current.type:
+            case TOKENS.LCURLY:
+                self.advance()
+                expressions = self.parse_expressions()
+                self.necessary_token_advance(TOKENS.RCURLY)
+
+            case TOKENS.ARROW:
+                self.advance()
+                expressions = ExpressionsNode([ReturnNode(self.parse_expressions())])
+            
+            case _:
+                expressions = self.parse_expressions(once = True)
 
         return (condition, expressions)
 

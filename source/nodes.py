@@ -72,6 +72,16 @@ class VarAccessNode:
         return f"VAR ACCESS: {self.name}"
 
 
+class AttributeNode(DataTypeNode):
+    def __init__(self, assign_expressions, access_expressions):
+        self.assign_expressions = assign_expressions
+        self.access_expressions = access_expressions
+
+
+    def __repr__(self):
+        return f"ATTRIBUTE: {{ ASSIGN = {self.assign_expressions} ACCESS = {self.access_expressions} }}"
+
+
 class AccessorNode:
     def __init__(self, node, index_expression):
         self.node = node
@@ -323,8 +333,8 @@ class StaticNode:
 
 
 class BuiltInFunctionNode:
-    def __init__(self, expression):
-        self.expressions = expression
+    def __init__(self, expressions):
+        self.expressions = expressions
 
 
     def __repr__(self):

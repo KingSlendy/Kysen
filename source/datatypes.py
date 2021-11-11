@@ -352,7 +352,7 @@ class Array(DataType):
 class Function(DataType):
     def __init__(self, scope, name, args, expressions):
         self.scope = scope
-        self.name = name if name != None else "#anonymous"
+        self.name = name if name != None else "anonymous"
         self.args = args
         self.expressions = expressions
 
@@ -393,6 +393,17 @@ class Instance(DataType):
 
     def __repr__(self):
         return f"<instance object {self.name}>"
+
+
+class Attribute(DataType):
+    def __init__(self, scope, assign_function, access_function):
+        self.scope = scope
+        self.assign_function = assign_function
+        self.access_function = access_function
+
+
+    def __repr__(self):
+        return f"<property object>"
 
 
 class Null(DataType):

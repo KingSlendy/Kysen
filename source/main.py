@@ -1,4 +1,4 @@
-import sys
+import os, sys
 from runner import Runner
 
 def run(text):
@@ -21,6 +21,10 @@ def main():
         match text.split(" "):
             case ["run", filename]:
                 text = open(filename, "r").read()
+
+            case ["clear"]:
+                os.system('cls' if os.name == 'nt' else 'clear')
+                return
 
             case ["exit"]:
                 break
