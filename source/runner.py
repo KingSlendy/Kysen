@@ -5,6 +5,9 @@ from parser import Parser
 class Runner:
     @staticmethod
     def execute(text):
+        if text == "":
+            return None
+
         lexer = Lexer(text)
         #print(lexer.tokens)
 

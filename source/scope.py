@@ -31,6 +31,13 @@ class Scope:
         return self.table.items()
 
 
+    def __eq__(self, other):
+        if isinstance(other, Scope):
+            return self.table == other.table
+
+        return NotImplemented
+
+
     def __iter__(self):
         yield from self.table
 

@@ -38,13 +38,14 @@ class TOKENS(Enum):
     RCURLY = "}"
     COMMA = ","
     DOT = "."
+    ARROW = "=>"
     SEMICOLON = ";"
     WHITESPACE = "WHITESPACE"
     ENDOFFILE = "ENDOFFILE"
 
 
 class KEYWORDS(Enum):
-    USING = "using"
+    IMPORT = "import"
     TRUE = "true"
     FALSE = "false"
     NULL = "null"
@@ -60,7 +61,7 @@ class KEYWORDS(Enum):
     RETURN = "return"
     CLASS = "class"
     STATIC = "static"
-    
+
 
 class Token():
     def __init__(self, type, value = None):

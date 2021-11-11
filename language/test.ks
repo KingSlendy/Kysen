@@ -165,6 +165,7 @@ t.Print = func(value) {Print(value);}
 t.Print(1);
 <#
 
+#>
 if (2 == 2) {
     a = 1;
 } else
@@ -172,3 +173,10 @@ if (2 == 2) {
 
 Console.Print(a);
 for (n in [0, 1]) Console.Print(n);
+<#
+
+func Test() {
+
+}
+
+Test.a = 1;

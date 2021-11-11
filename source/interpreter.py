@@ -157,6 +157,13 @@ class Interpreter:
             case n if isinstance(n, PropertyAccessNode):
                 identifier = self.visit(context, scope, n.node)
 
+                if not isinstance(identifier, (Class, Instance)):
+                    raise Exception(f"Cannot check for properties in variable of type '{type(identifier).__name__}'.")
+
+                if isinstance(n.property, VarAssignNode):
+                    if scope != identifier.scope and not n.property.name in identifier.scope:
+                        raise Exception(f"Cannot assign uninitialized property '{n.property.name}' for instance of '{identifier.name}': '{n.node.name}'.")
+
                 if last_scope == None:
                     last_scope = scope
 
