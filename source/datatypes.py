@@ -2,10 +2,16 @@ from nodes import ArgumentNode, BuiltInClassNode, BuiltInFunctionNode, Expressio
 from scope import Scope
 from time import time
 
+TYPE_SCOPE = Scope()
+
 class DataType:
     def __init__(self, scope, value = None):
         self.scope = scope
         self.value = value
+
+
+    def copy(self):
+        return self
 
 
     def __repr__(self):
@@ -13,8 +19,8 @@ class DataType:
 
 
 class Number(DataType):
-    def __init__(self, scope, value):
-        super().__init__(scope, value)
+    def __init__(self, value):
+        super().__init__(TYPE_SCOPE, value)
 
 
     def __pos__(self):
@@ -22,226 +28,226 @@ class Number(DataType):
 
     
     def __neg__(self):
-        return Number(self.scope, -self.value)
+        return NumberCache(-self.value)
 
 
     def __invert__(self):
-        return Number(self.scope, ~self.value)
+        return NumberCache(~self.value)
 
 
     def __pow__(self, other):
         if isinstance(other, Number):
-            return Number(self.scope, self.value ** other.value)
+            return NumberCache(self.value ** other.value)
 
         return NotImplemented
 
 
     def __rpow__(self, other):
         if isinstance(other, Number):
-            return Number(other.value ** self.value)
+            return NumberCache(other.value ** self.value)
 
         return NotImplemented
 
 
     def __mul__(self, other):
         if isinstance(other, Number):
-            return Number(self.scope, self.value * other.value)
+            return NumberCache(self.value * other.value)
 
         return NotImplemented
 
 
     def __rmul__(self, other):
         if isinstance(other, Number):
-            return Number(self.scope, other.value * self.value)
+            return NumberCache(other.value * self.value)
 
         return NotImplemented
 
 
     def __truediv__(self, other):
         if isinstance(other, Number):
-            return Number(self.scope, self.value / other.value)
+            return NumberCache(self.value / other.value)
 
         return NotImplemented
 
 
     def __rtruediv__(self, other):
         if isinstance(other, Number):
-            return Number(self.scope, other.value / self.value)
+            return NumberCache(other.value / self.value)
 
         return NotImplemented
 
 
     def __mod__(self, other):
         if isinstance(other, Number):
-            return Number(self.scope, self.value % other.value)
+            return NumberCache(self.value % other.value)
 
         return NotImplemented
 
 
     def __rmod__(self, other):
         if isinstance(other, Number):
-            return Number(self.scope, other.value % self.value)
+            return NumberCache(other.value % self.value)
 
         return NotImplemented
 
 
     def __add__(self, other):
         if isinstance(other, Number):
-            return Number(self.scope, self.value + other.value)
+            return NumberCache(self.value + other.value)
 
         return NotImplemented
             
             
     def __radd__(self, other):
         if isinstance(other, Number):
-            return Number(self.scope, other.value + self.value)
+            return NumberCache(other.value + self.value)
 
         return NotImplemented
 
 
     def __sub__(self, other):
         if isinstance(other, Number):
-            return Number(self.scope, self.value - other.value)
+            return NumberCache(self.value - other.value)
 
         return NotImplemented
             
             
     def __rsub__(self, other):
         if isinstance(other, Number):
-            return Number(self.scope, other.value - self.value)
+            return NumberCache(other.value - self.value)
 
         return NotImplemented
 
 
     def __lshift__(self, other):
         if isinstance(other, Number):
-            return Number(self.scope, self.value << other.value)
+            return NumberCache(self.value << other.value)
 
         return NotImplemented
 
 
     def __rlshift__(self, other):
         if isinstance(other, Number):
-            return Number(self.scope, other.value << self.value)
+            return NumberCache(other.value << self.value)
 
         return NotImplemented
 
 
     def __rshift__(self, other):
         if isinstance(other, Number):
-            return Number(self.scope, self.value >> other.value)
+            return NumberCache(self.value >> other.value)
 
         return NotImplemented
 
 
     def __rrshift__(self, other):
         if isinstance(other, Number):
-            return Number(self.scope, other.value >> self.value)
+            return NumberCache(other.value >> self.value)
 
         return NotImplemented
 
 
     def __lt__(self, other):
         if isinstance(other, Number):
-            return Bool(self.scope, self.value < other.value)
+            return BoolCache(self.value < other.value)
         else:
-            return Bool(self.scope, False)
+            return BoolCache(False)
 
 
     def __le__(self, other):
         if isinstance(other, Number):
-            return Bool(self.scope, self.value <= other.value)
+            return BoolCache(self.value <= other.value)
         else:
-            return Bool(self.scope, False)
+            return BoolCache(False)
 
 
     def __gt__(self, other):
         if isinstance(other, Number):
-            return Bool(self.scope, self.value > other.value)
+            return BoolCache(self.value > other.value)
         else:
-            return Bool(self.scope, False)
+            return BoolCache(False)
 
     
     def __ge__(self, other):
         if isinstance(other, Number):
-            return Bool(self.scope, self.value >= other.value)
+            return BoolCache(self.value >= other.value)
         else:
-            return Bool(self.scope, False)
+            return BoolCache(False)
 
 
     def __eq__(self, other):
         if isinstance(other, Number):
-            return Bool(self.scope, self.value == other.value)
+            return BoolCache(self.value == other.value)
         else:
-            return Bool(self.scope, False)
+            return BoolCache(False)
 
 
     def __ne__(self, other):
         if isinstance(other, Number):
-            return Bool(self.scope, self.value != other.value)
+            return BoolCache(self.value != other.value)
         else:
-            return Bool(self.scope, True)
+            return BoolCache(True)
 
 
     def __and__(self, other):
         if isinstance(other, Number):
-            return Number(self.scope, self.value & other.value)
+            return NumberCache(self.value & other.value)
 
         return NotImplemented
 
 
     def __rand__(self, other):
         if isinstance(other, Number):
-            return Number(self.scope, other.value & self.value)
+            return NumberCache(other.value & self.value)
 
         return NotImplemented
 
     
     def __or__(self, other):
         if isinstance(other, Number):
-            return Number(self.scope, self.value | other.value)
+            return NumberCache(self.value | other.value)
 
         return NotImplemented
 
 
     def __ror__(self, other):
         if isinstance(other, Number):
-            return Number(self.scope, other.value | self.value)
+            return NumberCache(other.value | self.value)
 
         return NotImplemented
 
 
     def __xor__(self, other):
         if isinstance(other, Number):
-            return Number(self.scope, self.value ^ other.value)
+            return NumberCache(self.value ^ other.value)
 
         return NotImplemented
 
 
     def __rxor__(self, other):
         if isinstance(other, Number):
-            return Number(self.scope, other.value ^ self.value)
+            return NumberCache(other.value ^ self.value)
 
         return NotImplemented
 
 
 class Bool(DataType):
-    def __init__(self, scope, value):
-        super().__init__(scope, value)
+    def __init__(self, value):
+        super().__init__(TYPE_SCOPE, value)
 
 
     def __eq__(self, other):
         if isinstance(other, Bool):
-            return Bool(self.scope, self.value == other.value)
+            return BoolCache(self.value == other.value)
         else:
-            return Bool(self.scope, self.value == other)
+            return BoolCache(self.value == other)
 
 
     def __ne__(self, other):
         if isinstance(other, Bool):
-            return Bool(self.scope, self.value != other.value)
+            return BoolCache(self.value != other.value)
         else:
-            return Bool(self.scope, self.value != other)
+            return BoolCache(self.value != other)
 
 
     def __repr__(self):
@@ -249,13 +255,13 @@ class Bool(DataType):
 
 
 class String(DataType):
-    def __init__(self, scope, value):
-        super().__init__(scope, value)
+    def __init__(self, value):
+        super().__init__(TYPE_SCOPE, value)
 
 
     def __mul__(self, other):
         if isinstance(other, Number):
-            return String(self.scope, self.value * other.value)
+            return String(self.value * other.value)
 
         return NotImplemented
 
@@ -266,30 +272,30 @@ class String(DataType):
 
     def __add__(self, other):
         if isinstance(other, String):
-            return String(self.scope, self.value + other.value)
+            return String(self.value + other.value)
         
         return NotImplemented
 
 
     def __radd__(self, other):
         if isinstance(other, String):
-            return String(self.scope, other.value + self.value)
+            return String(other.value + self.value)
         
         return NotImplemented
 
 
     def __eq__(self, other):
         if isinstance(other, String):
-            return Bool(self.scope, self.value == other.value)
+            return BoolCache(self.value == other.value)
         else:
-            return Bool(self.scope, self.value == other)
+            return BoolCache(self.value == other)
 
 
     def __ne__(self, other):
         if isinstance(other, String):
-            return Bool(self.scope, self.value != other.value)
+            return BoolCache(self.value != other.value)
         else:
-            return Bool(self.scope, self.value != other)
+            return BoolCache(self.value != other)
 
 
     def __getitem__(self, index):
@@ -314,7 +320,7 @@ class Array(DataType):
 
 
     def copy(self):
-        return Array(list(self.value))
+        return Array(self.scope, list(self.value))
 
 
     def __mul__(self, other):
@@ -355,10 +361,11 @@ class Function(DataType):
         self.name = name if name != None else "anonymous"
         self.args = args
         self.expressions = expressions
+        self.value = True
 
 
     def copy(self):
-        return Function(self.args, self.expressions)
+        return Function(self.scope, self.args, self.expressions)
 
     
     def __repr__(self):
@@ -372,6 +379,7 @@ class Class(DataType):
         self.args = args
         self.expressions = expressions
         self.static = False
+        self.value = True
 
 
     def __repr__(self):
@@ -384,6 +392,7 @@ class Instance(DataType):
         self.name = name
         self.scope.assign("this", self)
         BuiltIn.func_assign(self.scope, "ToString", [], [], self.Func_ToString)
+        self.value = True
 
 
     def Func_ToString(self, scope):
@@ -402,11 +411,43 @@ class Attribute(DataType):
         self.access_expressions = access_expressions
 
 
+    def copy(self):
+        return self
+
+
     def __repr__(self):
         return f"<property object>"
 
 
 class Null(DataType):
+    def copy(self):
+        return self
+
+
+    def __lt__(self):
+        return Bool(False)
+
+
+    def __le__(self, other):
+        return Bool(isinstance(other, Null))
+
+
+    def __gt__(self):
+        return Bool(False)
+
+    
+    def __ge__(self, other):
+        return Bool(isinstance(other, Null))
+
+
+    def __eq__(self, other):
+        return Bool(isinstance(other, Null))
+
+
+    def __ne__(self, other):
+        return Bool(not isinstance(other, Null))
+
+
     def __repr__(self):
         return f"null"
 
@@ -460,21 +501,40 @@ class BuiltIn:
 
 
     @staticmethod
-    def Class_Global_Func_Timer(scope):
-        return Number(scope, time())
+    def Func_Timer(scope):
+        return NumberCache(time())
 
     
     @staticmethod
-    def Class_Global_Func_Range(scope):
+    def Func_Range(scope):
         start = scope.access("start")
         finish = scope.access("finish")
         step = scope.access("step")
 
         if finish.value == None:
             finish = start
-            start = Number(0)
+            start = NumberCache(0)
 
         if step.value == 0:
             raise Exception("'step' argument must be non-zero.")
         
         return Array(scope.copy(), list(range(start.value, finish.value, step.value)))
+
+
+def NumberCache(n):
+    check_n = n + 255
+    as_float = float(n)
+
+    if as_float.is_integer() and -1 < check_n < 510:
+        return NUMBER_TYPES[check_n]
+
+    return Number(n)
+
+
+def BoolCache(v):
+    return BOOL_TYPES[0 if v == False else 1]
+
+
+NUMBER_TYPES = [Number(n) for n in range(-255, 256)]
+BOOL_TYPES = [Bool(False), Bool(True)]
+NULL_TYPE = Null(None)

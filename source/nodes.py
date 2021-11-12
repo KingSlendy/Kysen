@@ -358,3 +358,8 @@ class ExpressionsNode:
 
     def __repr__(self):
         return f"EXPRS: ({self.expressions})"
+
+
+NUMBER_NODES = [NumberNode(n) for n in range(-255, 256)]
+BOOL_NODES = [BoolNode(False), BoolNode(True)]
+NULL_NODE = NullNode()

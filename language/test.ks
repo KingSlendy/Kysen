@@ -175,6 +175,7 @@ Console.Print(a);
 for (n in [0, 1]) Console.Print(n);
 <#
 
+#>
 class Date() {
     seconds = 0;
 
@@ -192,3 +193,18 @@ class Date() {
 d = Date();
 d.Hour = 30;
 Console.Print(d.Hour);
+<#
+
+#>
+time = Timer();
+
+for (n in Range(100000)) {
+    1 + 1;
+}
+
+Console.Print(Timer() - time);
+<#
+
+a = 11;
+b = if (a == 10) 100; else 200;
+Console.Print(b);

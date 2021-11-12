@@ -2,6 +2,7 @@ class Scope:
     def __init__(self, parent = None):
         self.parent = parent
         self.table = {}
+        self.look_back = True
 
 
     def assign(self, key, value):
@@ -11,7 +12,7 @@ class Scope:
 
     def access(self, key):
         if key not in self.table:
-            if self.parent != None:
+            if self.look_back and self.parent != None:
                 return self.parent.access(key)
             else:
                 raise Exception(f"Variable '{key}' not declared in current scope.")

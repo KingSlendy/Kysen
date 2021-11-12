@@ -157,11 +157,11 @@ class Parser:
                 match token.value:
                     case KEYWORDS.TRUE | KEYWORDS.FALSE:
                         self.advance()
-                        return BoolNode(token.value.value)
+                        return BOOL_NODES[0 if token.value.value == "false" else 1]
 
                     case KEYWORDS.NULL:
                         self.advance()
-                        return NullNode()
+                        return NULL_NODE
 
                     case KEYWORDS.IF:
                         return self.parse_if_statement()
@@ -219,14 +219,7 @@ class Parser:
                         node = self.parse_property_access(node)
 
                     case TOKENS.ARROW:
-                        self.advance()
-                        self.necessary_token_advance(TOKENS.LCURLY)
-                        self.necessary_keyword_advance(KEYWORDS.ASSIGN)
-                        (_, assign_expressions) = self.parse_statement(first_advance = False, has_condition = False)
-                        self.necessary_keyword_advance(KEYWORDS.ACCESS)
-                        (_, access_expressions) = self.parse_statement(first_advance = False, has_condition = False)
-                        self.necessary_token_advance(TOKENS.RCURLY)
-                        return AttributeNode(name, assign_expressions, access_expressions)
+                        return self.parse_attribute_expression(node)
 
                 if self.current.type == TOKENS.EQUALS:
                     self.advance()
@@ -243,6 +236,10 @@ class Parser:
 
             case t if t in (TOKENS.INT, TOKENS.FLOAT):
                 self.advance()
+
+                if token.value + 255 in NUMBER_NODES:
+                    return NUMBER_NODES[token.value + 255]
+
                 return NumberNode(token.value)
 
             case TOKENS.STRING:
@@ -447,6 +444,29 @@ class Parser:
 
             if self.current.type == TOKENS.COMMA:
                 self.advance()
+
+
+    def parse_attribute_expression(self, node):
+        name = node.name
+        self.advance()
+        self.necessary_token_advance(TOKENS.LCURLY)
+
+        if self.current.value == KEYWORDS.ASSIGN:
+            self.advance()
+            (_, assign_expressions) = self.parse_statement(first_advance = False, has_condition = False)
+            self.necessary_keyword_advance(KEYWORDS.ACCESS)
+            (_, access_expressions) = self.parse_statement(first_advance = False, has_condition = False)
+            self.necessary_token_advance(TOKENS.RCURLY)
+        elif self.current.value == KEYWORDS.ACCESS:
+            self.advance()
+            (_, access_expressions) = self.parse_statement(first_advance = False, has_condition = False)
+            self.necessary_keyword_advance(KEYWORDS.ASSIGN)
+            (_, assign_expressions) = self.parse_statement(first_advance = False, has_condition = False)
+            self.necessary_token_advance(TOKENS.RCURLY)
+        else:
+            raise Exception("Expected keyword(s): 'assign', 'access'.")
+
+        return AttributeNode(name, assign_expressions, access_expressions)
 
 
     def parse_binary_expression(self, priority = 0):

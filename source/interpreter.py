@@ -3,10 +3,15 @@ from nodes import *
 from scope import Scope
 
 global_scope = Scope()
-#BuiltIn.class_assign(global_scope, "Global", [], [], BuiltIn.Class_Global)
 
+# Global
+BuiltIn.func_assign(global_scope, "Range", ["start"], [("finish", NULL_TYPE), ("step", NumberCache(1))], BuiltIn.Func_Range)
+BuiltIn.func_assign(global_scope, "Timer", [], [], BuiltIn.Func_Timer)
+
+# Console
 BuiltIn.class_assign(global_scope, "Console", [], [], BuiltIn.Class_Console)
 BuiltIn.static_assign(global_scope, "Console", "Print", ["value"], [], BuiltIn.Class_Console_Func_Print)
+
 
 last_scope = None
 
@@ -32,10 +37,13 @@ class Interpreter:
 
                     results.append(value)
 
-                if len(results) == 1 and isinstance(results[0], DataType):
-                    return results[0]
-                else:
-                    return None
+                if len(results) == 1:
+                    result = results[0]
+
+                    if isinstance(result, DataType) and not isinstance(result, Null):
+                        return result
+
+                return None
 
             case n if isinstance(n, VarAssignNode):
                 old_scope = scope
@@ -80,7 +88,6 @@ class Interpreter:
 
                         if not isinstance(value, ReturnNode):
                             raise Exception("There's no return inside attribute access.")
-
                         
                         value = self.visit(context, scope, value.expression)
 
@@ -122,7 +129,7 @@ class Interpreter:
                     last_scope = None
 
                 if not isinstance(identifier, (Function, Class)):
-                    raise Exception(f"Trying to access a variable that's not a function or class.")
+                    raise Exception(f"Cannot instantiate or call a value of type '{type(identifier).__name__}'.")
 
                 if isinstance(identifier, Class) and identifier.static:
                     raise Exception(f"Cannot instance the static class '{identifier.name}'.")
@@ -180,13 +187,10 @@ class Interpreter:
                     else:
                         value = value.expression
 
-                        if value == None:
-                            value = Null(scope)
+                        if value is None:
+                            value = NULL_TYPE
                     
-                    try:
-                        return value.copy()
-                    except:
-                        return value
+                    return value.copy()
 
                 return instance
 
@@ -203,7 +207,9 @@ class Interpreter:
                 if last_scope == None:
                     last_scope = scope
 
+                identifier.scope.look_back = False
                 value = self.visit({"name": identifier.name, "instance": isinstance(identifier, Instance)}, identifier.scope, n.property)
+                identifier.scope.look_back = True
                 return value
 
             case n if issubclass(type(n), DataTypeNode):
@@ -238,7 +244,7 @@ class Interpreter:
                         return object
 
                     case _ if isinstance(n, NullNode):
-                        return NullNode(scope)
+                        return NULL_TYPE
 
                     case _ if isinstance(n, AttributeNode):
                         value = Attribute(scope, n.assign_expressions, n.access_expressions)
@@ -246,12 +252,12 @@ class Interpreter:
 
                     case _:
                         cast_type = {
-                            NumberNode: Number,
-                            BoolNode: Bool,
+                            NumberNode: NumberCache,
+                            BoolNode: BoolCache,
                             StringNode: String
                         }[type(n)]
 
-                        return cast_type(scope.copy(), n.value)
+                        return cast_type(n.value)
 
             case n if issubclass(type(n), BinaryOperationNode):
                 if n.assignment:
@@ -314,10 +320,16 @@ class Interpreter:
                         return left ^ right
 
                     case _ if isinstance(n, AndNode):
-                        return left and right
+                        if (isinstance(left, Bool) and left.value) and (isinstance(right, Bool) and right.value):
+                            return BoolCache(True)
+
+                        return BoolCache(False)
 
                     case _ if isinstance(n, OrNode):
-                        return left or right
+                        if (isinstance(left, Bool) and left.value) or (isinstance(right, Bool) and right.value):
+                            return BoolCache(True)
+
+                        return BoolCache(False)
 
             case n if issubclass(type(n), UnaryOperationNode):
                 right = self.visit(context, scope, n.right)
@@ -330,7 +342,7 @@ class Interpreter:
                         return -right
 
                     case _ if isinstance(n, NotNode):
-                        return Bool(scope, not right.value)
+                        return BoolCache(not right.value)
 
                     case _ if isinstance(n, BitNotNode):
                         return ~right
