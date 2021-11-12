@@ -1,4 +1,6 @@
 import string
+from errors import *
+from runtime import Position
 from tokens import *
 
 LETTERS = string.ascii_letters
@@ -8,10 +10,13 @@ VALID_IDENTIFIER = LETTERS_DIGITS + "_"
 WHITESPACE = string.whitespace
 
 class Lexer:
-    def __init__(self, text):
+    def __init__(self, text, runtime):
         self.text = text
+        self.runtime = runtime
         self.position = -1
         self.current = None
+        self.runline = 1
+        self.runpos = -1
         self.tokens = []
         self.advance()
         self.run()
@@ -20,6 +25,7 @@ class Lexer:
     def advance(self):
         self.position += 1
         self.current = self.text[self.position] if -1 < self.position < len(self.text) else None
+        self.runpos += 1
 
     
     def peek(self, offset):
@@ -41,6 +47,10 @@ class Lexer:
                     self.advance()
                     break
 
+                if self.current == "\n":
+                    self.runline += 1
+                    self.runpos = 0
+
                 self.advance()
         else:
             while self.current != None and self.current != "\n":
@@ -48,49 +58,51 @@ class Lexer:
 
 
     def make_double_type_token(self, char_double, type_single, type_double):
-        pos_start = self.position
+        pos_start = self.runpos
+        token_type = type_single
         self.advance()
 
         if self.current == char_double:
             self.advance()
-            return Token(type_double).set_pos(pos_start, self.position)
+            token_type = type_double
 
-        return Token(type_single).set_pos(pos_start, self.position)
+        return Token(token_type).set_pos(self.runline, pos_start, self.runpos - 1)
 
     
     def make_triple_type_token(self, char_double1, char_double2, type_single, type_double1, type_double2):
-        pos_start = self.position
+        pos_start = self.runpos
+        token_type = type_single
         self.advance()
 
         if self.current == char_double1:
             self.advance()
-            return Token(type_double1).set_pos(pos_start, self.position)
+            token_type = type_double1
         elif self.current == char_double2:
             self.advance()
-            return Token(type_double2).set_pos(pos_start, self.position)
+            token_type = type_double2
 
-        return Token(type_single).set_pos(pos_start, self.position)
+        return Token(token_type).set_pos(self.runline, pos_start, self.runpos - 1)
 
 
     def make_binary_token(self, char_double, type_single, type_double):
-        pos_start = self.position
+        pos_start = self.runpos
         self.advance()
         token_type = type_single
 
         if self.current == char_double:
             self.advance()
             token_type = type_double
-        
-        if self.current == "=":
+        elif self.current == "=":
             self.advance()
-            return Token(TOKENS.ASSIGNMENT, token_type).set_pos(pos_start, self.position)
+            return Token(TOKENS.ASSIGNMENT, token_type).set_pos(self.runline, pos_start, self.runpos - 1)
 
-        return Token(token_type).set_pos(pos_start, self.position)
+        return Token(token_type).set_pos(self.runline, pos_start, self.runpos - 1)
 
     
     def make_lessgreater_token(self, type_single, type_double1, type_double2):
-        pos_start = self.position
+        pos_start = self.runpos
         previous = self.current
+        token_type = type_single
         self.advance()
 
         if self.current == previous:
@@ -98,29 +110,34 @@ class Lexer:
 
             if self.current == "=":
                 self.advance()
-                return Token(TOKENS.ASSIGNMENT, type_double1).set_pos(pos_start, self.position)
+                return Token(TOKENS.ASSIGNMENT, type_double1).set_pos(self.runline, pos_start, self.runpos - 1)
             else:
-                return Token(type_double1).set_pos(pos_start, self.position)
+                token_type = type_double1
         elif self.current == "=":
             self.advance()
-            return Token(type_double2).set_pos(pos_start, self.position)
+            token_type = type_double2
 
-        return Token(type_single).set_pos(pos_start, self.position)
+        return Token(token_type).set_pos(self.runline, pos_start, self.runpos - 1)
 
 
     def make_whitespace_token(self):
-        pos_start = self.position
+        line_start = self.runline
+        pos_start = self.runpos
         value = ""
 
         while self.current != None and self.current in WHITESPACE:
+            if self.current == "\n":
+                self.runline += 1
+                self.runpos = 0
+
             value += self.current
             self.advance()
 
-        return Token(TOKENS.WHITESPACE, value).set_pos(pos_start, self.position)
+        return Token(TOKENS.WHITESPACE, value).set_pos(line_start, pos_start, self.runpos - 1)
 
 
     def make_identifier_token(self):
-        pos_start = self.position
+        pos_start = self.runpos
         value = self.current
         self.advance()
 
@@ -130,12 +147,13 @@ class Lexer:
 
         try:
             keyword = KEYWORDS[value.upper()]
-            return Token(TOKENS.KEYWORD, keyword).set_pos(pos_start, self.position)
+            return Token(TOKENS.KEYWORD, keyword).set_pos(self.runline, pos_start, self.runpos - 1)
         except KeyError:
-            return Token(TOKENS.IDENTIFIER, value).set_pos(pos_start, self.position)
+            return Token(TOKENS.IDENTIFIER, value).set_pos(self.runline, pos_start, self.runpos - 1)
+
 
     def make_number_token(self):
-        pos_start = self.position
+        pos_start = self.runpos
         value = ""
         has_dot = False
 
@@ -150,13 +168,13 @@ class Lexer:
             self.advance()
 
         if not has_dot:
-            return Token(TOKENS.INT, int(value)).set_pos(pos_start, self.position)
+            return Token(TOKENS.INT, int(value)).set_pos(self.runline, pos_start, self.runpos - 1)
         else:
-            return Token(TOKENS.FLOAT, float(value)).set_pos(pos_start, self.position)
+            return Token(TOKENS.FLOAT, float(value)).set_pos(self.runline, pos_start, self.runpos - 1)
 
 
     def make_string_token(self):
-        pos_start = self.position
+        pos_start = self.runpos
         value = ""
         self.advance()
         escape = False
@@ -171,21 +189,21 @@ class Lexer:
             self.advance()
 
         self.advance()
-        return Token(TOKENS.STRING, value).set_pos(pos_start, self.position)
+        return Token(TOKENS.STRING, value).set_pos(self.runline, pos_start, self.position)
 
 
     def run(self):
         while True:
             match self.current:
                 case None:
-                    self.register_token(Token(TOKENS.ENDOFFILE).set_pos(self.position))
+                    self.register_token(Token(TOKENS.ENDOFFILE).set_pos(self.runline, self.runpos))
                     break
 
                 case "#":
                     self.comment_skip()
 
                 case ";":
-                    self.register_token(Token(TOKENS.SEMICOLON).set_pos(self.position))
+                    self.register_token(Token(TOKENS.SEMICOLON).set_pos(self.runline, self.runpos))
                     self.advance()
 
                 case "\"":
@@ -228,38 +246,38 @@ class Lexer:
                     self.register_token(self.make_binary_token("??", TOKENS.BITXOR, TOKENS.BITXOR))
 
                 case "(":
-                    self.register_token(Token(TOKENS.LPAREN).set_pos(self.position))
+                    self.register_token(Token(TOKENS.LPAREN).set_pos(self.runline, self.runpos))
                     self.advance()
 
                 case ")":
-                    self.register_token(Token(TOKENS.RPAREN).set_pos(self.position))
+                    self.register_token(Token(TOKENS.RPAREN).set_pos(self.runline, self.runpos))
                     self.advance()
 
                 case "[":
-                    self.register_token(Token(TOKENS.LBRACKET).set_pos(self.position))
+                    self.register_token(Token(TOKENS.LBRACKET).set_pos(self.runline, self.runpos))
                     self.advance()
 
                 case "]":
-                    self.register_token(Token(TOKENS.RBRACKET).set_pos(self.position))
+                    self.register_token(Token(TOKENS.RBRACKET).set_pos(self.runline, self.runpos))
                     self.advance()
 
                 case "{":
-                    self.register_token(Token(TOKENS.LCURLY).set_pos(self.position))
+                    self.register_token(Token(TOKENS.LCURLY).set_pos(self.runline, self.runpos))
                     self.advance()
 
                 case "}":
-                    self.register_token(Token(TOKENS.RCURLY).set_pos(self.position))
+                    self.register_token(Token(TOKENS.RCURLY).set_pos(self.runline, self.runpos))
                     self.advance()
 
                 case ",":
-                    self.register_token(Token(TOKENS.COMMA).set_pos(self.position))
+                    self.register_token(Token(TOKENS.COMMA).set_pos(self.runline, self.runpos))
                     self.advance()
 
                 case ".":
                     if self.peek(1) in DIGITS:
                         self.register_token(self.make_number_token())
                     else:
-                        self.register_token(Token(TOKENS.DOT).set_pos(self.position))
+                        self.register_token(Token(TOKENS.DOT).set_pos(self.runline, self.runpos))
                         self.advance()
 
                 case c if c in WHITESPACE:
@@ -272,4 +290,5 @@ class Lexer:
                     self.register_token(self.make_number_token())
 
                 case c:
-                    raise Exception(f"Invalid character: '{c}'")
+                    self.runtime.report(IllegalCharError(c), Position(self.runline, self.runpos))
+                    #raise Exception(f"Invalid character: '{c}'")

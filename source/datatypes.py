@@ -8,6 +8,7 @@ class DataType:
     def __init__(self, scope, value = None):
         self.scope = scope
         self.value = value
+        self.static = False
 
 
     def copy(self):

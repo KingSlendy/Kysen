@@ -1,3 +1,4 @@
+from errors import *
 from nodes import *
 from tokens import KEYWORDS, TOKENS
 
@@ -69,8 +70,9 @@ def binary_operator_priority(token):
             return -1
 
 class Parser:
-    def __init__(self, tokens):
+    def __init__(self, tokens, runtime):
         self.tokens = tokens
+        self.runtime = runtime
         self.position = -1
         self.current = None
         self.tree = None
@@ -108,14 +110,22 @@ class Parser:
 
     def necessary_token_advance(self, type):
         if self.current.type != type:
-            raise Exception(f"Expected '{type.value}'")
+            pos = self.peek(-1).pos
+            pos.start = pos.end + 1
+            pos.end = pos.start
+            self.runtime.report(SyntaxError(f"expected '{type.value}'."), pos)
+            #raise Exception(f"Expected '{type.value}'")
 
         self.advance()
 
     
     def necessary_keyword_advance(self, keyword):
         if not self.current.value == keyword:
-            raise Exception(f"Expected keyword '{keyword.value}'")
+            pos = self.peek(-1).pos
+            pos.start = pos.end + 1
+            pos.end = pos.start
+            self.runtime.report(SyntaxError(f"expected '{keyword.value}'."), pos)
+            #raise Exception(f"Expected keyword '{keyword.value}'")
 
         self.advance()
 
@@ -247,7 +257,8 @@ class Parser:
                 return StringNode(token.value)
 
             case _:
-                raise Exception(f"Invalid token: '{token}'")
+                self.runtime.report(SyntaxError(f"unexpected syntax."), token.pos)
+                #raise Exception(f"Invalid token: '{token}'")
 
 
     def parse_accessors(self, node):
@@ -338,7 +349,8 @@ class Parser:
                 self.necessary_token_advance(TOKENS.RPAREN)
             else:
                 if self.current.type == TOKENS.RPAREN:
-                    raise Exception("Unexpected ')'.")
+                    self.runtime.report(SyntaxError("unexpected ')'."), self.current.pos)
+                    #raise Exception("Unexpected ')'.")
 
                 self.ignore_token_advance(TOKENS.RPAREN)
 
@@ -408,7 +420,8 @@ class Parser:
         self.advance()
 
         if self.current.type != TOKENS.IDENTIFIER:
-            raise Exception("Expected identifier.")
+            self.runtime.report(SyntaxError("expected identifier."), self.current.pos)
+            #raise Exception("Expected identifier.")
             
         name = self.current.value
         self.advance()
@@ -440,7 +453,8 @@ class Parser:
             args.append(node)
 
             if self.current.type not in (TOKENS.COMMA, TOKENS.RPAREN):
-                raise Exception("Expected ',' or ')'.")
+                self.runtime.report(SyntaxError("expected ',', ')'."), self.current.pos)
+                #raise Exception("Expected ',' or ')'.")
 
             if self.current.type == TOKENS.COMMA:
                 self.advance()
@@ -464,7 +478,8 @@ class Parser:
             (_, assign_expressions) = self.parse_statement(first_advance = False, has_condition = False)
             self.necessary_token_advance(TOKENS.RCURLY)
         else:
-            raise Exception("Expected keyword(s): 'assign', 'access'.")
+            self.runtime.report(SyntaxError("expected keyword(s) 'assign', 'access'."), self.current.pos)
+            #raise Exception("Expected keyword(s): 'assign', 'access'.")
 
         return AttributeNode(name, assign_expressions, access_expressions)
 
@@ -504,4 +519,5 @@ class Parser:
         self.tree = self.parse_expressions()
 
         if self.current.type != TOKENS.ENDOFFILE:
-            raise Exception("Invalid syntax.")
+            self.runtime.report(SyntaxError(f"invalid syntax."), self.current.pos)
+            #raise Exception("Invalid syntax.")

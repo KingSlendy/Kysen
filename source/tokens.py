@@ -1,4 +1,5 @@
 from enum import Enum
+from runtime import Position
 
 class TOKENS(Enum):
     IDENTIFIER = "IDENTIFIER"
@@ -73,8 +74,8 @@ class Token():
         self.value = value
 
 
-    def set_pos(self, start, end = None):
-        self.pos = Position(start, end)
+    def set_pos(self, line, start, end = None):
+        self.pos = Position(line, start, end)
         return self
 
 
@@ -87,9 +88,3 @@ class Token():
             return f"{self.type.value}: {self.value}"
         else:
             return f"{self.type.value}"
-
-
-class Position():
-    def __init__(self, start, end = None):
-        self.start = start
-        self.end = end if end != None else start

@@ -1,6 +1,7 @@
 class DataTypeNode:
     def __init__(self, value = None):
         self.value = value
+        self.typed = False
 
 
     def __repr__(self):
@@ -32,6 +33,7 @@ class FunctionNode(DataTypeNode):
         self.name = name
         self.args = args
         self.expressions = expressions
+        self.typed = False
 
     
     def __repr__(self):
@@ -43,6 +45,7 @@ class ClassNode(DataTypeNode):
         self.name = name
         self.args = args
         self.expressions = expressions
+        self.typed = False
 
 
     def __repr__(self):

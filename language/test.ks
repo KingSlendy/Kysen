@@ -1,3 +1,7 @@
+a = 10;
+
+if (2 {a;}
+
 #>
 class Test() {
     this.value = 10;
@@ -204,7 +208,3 @@ for (n in Range(100000)) {
 
 Console.Print(Timer() - time);
 <#
-
-a = 11;
-b = if (a == 10) 100; else 200;
-Console.Print(b);

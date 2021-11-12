@@ -16,8 +16,9 @@ BuiltIn.static_assign(global_scope, "Console", "Print", ["value"], [], BuiltIn.C
 last_scope = None
 
 class Interpreter:
-    def __init__(self, tree):
+    def __init__(self, tree, runtime):
         self.tree = tree
+        self.runtime = runtime
         self.result = None
         self.run()
 

@@ -1,18 +1,21 @@
 import os, sys
+from errors import RuntimeException
 from runner import Runner
 
-def run(text):
-    #try:
-    compiled = Runner.execute(text)
+def run(filename, text):
+    try:
+        compiled = Runner.execute(filename, text)
 
-    if compiled != None:
-        print(compiled)
-    #except Exception as e:
-        #print(e)
+        if compiled != None:
+            print(compiled)
+    except RuntimeException as e:
+        print(e)
+
 
 def main():
     if len(sys.argv) >= 2:
-        run(open(sys.argv[1], "r").read())
+        filename = sys.argv[1]
+        run(filename, open(filename, "r").read())
         return
 
     while True:
@@ -29,7 +32,7 @@ def main():
             case ["exit"]:
                 break
 
-        run(text)
+        run("<stdin>", text)
 
 
 if __name__ == "__main__":
