@@ -175,21 +175,20 @@ Console.Print(a);
 for (n in [0, 1]) Console.Print(n);
 <#
 
-static class Test() {
-    static func Call() {
-        for (n in [0, 1, 2, 3, 4, 5]) {
-            if (n == 3) {
-                return n;
-            }
+class Date() {
+    seconds = 0;
+
+    Hour => {
+        assign {
+            seconds = (value % 24) * 3600;
+        }
+
+        access {
+            return seconds / 3600;
         }
     }
 }
 
-Console.Print(a.Call());
-
-# 5 x 4 x 3 x 2 x 1
-# 5 * 4
-
-#a;
-#Console.Print(Math.Factorial);
-#Console.Print(Math.Factorial(5));
+d = Date();
+d.Hour = 30;
+Console.Print(d.Hour);

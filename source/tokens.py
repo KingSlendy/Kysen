@@ -55,7 +55,7 @@ class KEYWORDS(Enum):
     FOR = "for"
     IN = "in"
     WHILE = "while"
-    CONTINUE = "CONTINUE"
+    CONTINUE = "continue"
     BREAK = "break"
     FUNC = "func"
     RETURN = "return"

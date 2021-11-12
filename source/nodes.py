@@ -73,7 +73,8 @@ class VarAccessNode:
 
 
 class AttributeNode(DataTypeNode):
-    def __init__(self, assign_expressions, access_expressions):
+    def __init__(self, name, assign_expressions, access_expressions):
+        self.name = name
         self.assign_expressions = assign_expressions
         self.access_expressions = access_expressions
 

@@ -44,24 +44,45 @@ class Interpreter:
                     old_scope = last_scope
                     last_scope = None
 
-                assign = self.visit(context, old_scope, n.expression)
+                value = self.visit(context, old_scope, n.expression)
 
-                if not issubclass(type(assign), DataType):
+                if not issubclass(type(value), DataType):
                     raise Exception(f"Cannot assign a non-type value to variable '{n.name}'.")
 
-                value = scope.assign(n.name, assign)
+                if n.name in scope:
+                    attribute = scope.access(n.name)
 
-                if isinstance(value, Attribute):
-                    print("There's an attribute.")
+                    if isinstance(attribute, Attribute):
+                        last_value = None
 
-                return value
+                        if "value" in scope:
+                            last_value = scope.access("value")
+
+                        scope.assign("value", value)
+                        value = self.visit(context, scope, attribute.assign_expressions)
+
+                        if last_value != None:
+                            scope.assign("value", last_value)
+                        else:
+                            scope.remove("value")
+
+                        return value
+
+                return scope.assign(n.name, value)
 
             case n if isinstance(n, VarAccessNode):
                 try:
                     value = scope.access(n.name)
 
                     if isinstance(value, Attribute):
-                        print("There's an attribute.")
+                        attribute = value
+                        value = self.visit(context, scope, attribute.access_expressions)
+
+                        if not isinstance(value, ReturnNode):
+                            raise Exception("There's no return inside attribute access.")
+
+                        
+                        value = self.visit(context, scope, value.expression)
 
                     return value
                 except Exception as ex:
@@ -167,18 +188,6 @@ class Interpreter:
                     except:
                         return value
 
-                #for e in identifier.expressions.expressions:
-                #    value = self.visit(context, scope, e)
-
-                #    if isinstance(e, ReturnNode):
-                #        try:
-                #            return value.copy()
-                #        except:
-                #            return value
-                #    
-                #    if isinstance(value, ReturnNode):
-                #        return value.expression
-
                 return instance
 
             case n if isinstance(n, PropertyAccessNode):
@@ -196,9 +205,6 @@ class Interpreter:
 
                 value = self.visit({"name": identifier.name, "instance": isinstance(identifier, Instance)}, identifier.scope, n.property)
                 return value
-
-            #case n if isinstance(n, ReturnNode):
-                #return self.visit(context, scope, n.expression)
 
             case n if issubclass(type(n), DataTypeNode):
                 match n:
@@ -235,7 +241,8 @@ class Interpreter:
                         return NullNode(scope)
 
                     case _ if isinstance(n, AttributeNode):
-                        return Attribute(n.assign_expressions, n.access_expressions)
+                        value = Attribute(scope, n.assign_expressions, n.access_expressions)
+                        return scope.assign(n.name, value)
 
                     case _:
                         cast_type = {

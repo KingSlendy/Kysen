@@ -396,10 +396,10 @@ class Instance(DataType):
 
 
 class Attribute(DataType):
-    def __init__(self, scope, assign_function, access_function):
+    def __init__(self, scope, assign_expressions, access_expressions):
         self.scope = scope
-        self.assign_function = assign_function
-        self.access_function = access_function
+        self.assign_expressions = assign_expressions
+        self.access_expressions = access_expressions
 
 
     def __repr__(self):

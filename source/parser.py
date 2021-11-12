@@ -226,7 +226,7 @@ class Parser:
                         self.necessary_keyword_advance(KEYWORDS.ACCESS)
                         (_, access_expressions) = self.parse_statement(first_advance = False, has_condition = False)
                         self.necessary_token_advance(TOKENS.RCURLY)
-                        return AttributeNode(assign_expressions, access_expressions)
+                        return AttributeNode(name, assign_expressions, access_expressions)
 
                 if self.current.type == TOKENS.EQUALS:
                     self.advance()
