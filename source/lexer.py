@@ -245,6 +245,10 @@ class Lexer:
                 case "^":
                     self.register_token(self.make_binary_token("??", TOKENS.BITXOR, TOKENS.BITXOR))
 
+                case "~":
+                    self.register_token(Token(TOKENS.BITNOT).set_pos(self.runline, self.runpos))
+                    self.advance()
+
                 case "(":
                     self.register_token(Token(TOKENS.LPAREN).set_pos(self.runline, self.runpos))
                     self.advance()
