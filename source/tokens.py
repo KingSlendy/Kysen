@@ -39,6 +39,7 @@ class TOKENS(Enum):
     RCURLY = "}"
     COMMA = ","
     DOT = "."
+    DOTDOT = ":"
     ARROW = "=>"
     SEMICOLON = ";"
     WHITESPACE = "WHITESPACE"

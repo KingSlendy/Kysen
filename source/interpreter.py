@@ -73,24 +73,18 @@ class Interpreter:
                 return scope.assign(n.name, value)
 
             case n if isinstance(n, VarAccessNode):
-                try:
-                    value = scope.access(n.name)
+                value = scope.access(n.name)
 
-                    if isinstance(value, Attribute):
-                        attribute = value
-                        value = self.visit(context, scope, attribute.access_expressions)
+                if isinstance(value, Attribute):
+                    attribute = value
+                    value = self.visit(context, scope, attribute.access_expressions)
 
-                        if not isinstance(value, ReturnNode):
-                            raise Exception("There's no return inside attribute access.")
-                        
-                        value = self.visit(context, scope, value.expression)
+                    if not isinstance(value, ReturnNode):
+                        raise Exception("There's no return inside attribute access.")
+                    
+                    value = self.visit(context, scope, value.expression)
 
-                    return value
-                except Exception as ex:
-                    if context != None:
-                        raise Exception(f"{'Instance of type ' if context['instance'] else 'Class '}'{context['name']}' has no property or function '{n.name}'.")
-                    else:
-                        raise ex
+                return value
 
             case n if isinstance(n, AccessorNode):
                 context = None
@@ -121,7 +115,6 @@ class Interpreter:
                 if last_scope != None:
                     old_scope = last_scope
                     last_scope = None
-
                 if not isinstance(identifier, (Function, Class)):
                     raise Exception(f"Cannot instantiate or call a value of type '{type(identifier).__name__}'.")
 
@@ -140,8 +133,8 @@ class Interpreter:
                     raise Exception(f"Expected {arg_number} total argument(s), got {passed_arg_number}.")
 
                 if isinstance(identifier, Class):
-                    instance = Instance(scope.copy(), identifier.name)
-                    scope = instance.scope
+                    scope = scope.copy()
+                    instance = Instance(scope, identifier.name, identifier)
                 else:
                     instance = None
                     scope = identifier.scope.copy()
@@ -173,6 +166,30 @@ class Interpreter:
                 for kw_arg in [kw for kw in kw_args if kw.name not in declared_kw_arguments]:
                     scope.assign(kw_arg.name, self.visit(context, old_scope, kw_arg.expression))  
 
+                if instance != None:
+                    # This instance inherits from another class.
+                    if instance.parent.inherit != None:
+                        base = None
+
+                        # Check for the "base()" initializer in the expressions.
+                        for i, e in enumerate(identifier.expressions.expressions):
+                            if isinstance(e, FunctionAccessNode) and e.node.name == "base":
+                                base = self.visit(context, scope, FunctionAccessNode(scope.access(instance.parent.inherit), e.args))
+                                del identifier.expressions.expressions[i]
+
+                        if base != None:
+                            for k, v in base.scope.items():
+                                if k != "this":
+                                    value = v.copy()
+
+                                    if isinstance(v, (Function, Class)):
+                                        value.scope = scope.copy()
+
+                                    scope.assign(k, value)
+
+                            scope.assign("base", base)
+
+                # Visit the all the Function/Class expressions.
                 value = self.visit(context, scope, identifier.expressions)
 
                 if isinstance(value, ReturnNode):
@@ -198,12 +215,20 @@ class Interpreter:
                     if scope != identifier.scope and not n.property.name in identifier.scope:
                         raise Exception(f"Cannot assign uninitialized property '{n.property.name}' for '{identifier.name}': '{n.node.name}'.")
 
+                check_property = n.property
+
+                while not isinstance(check_property, (VarAssignNode, VarAccessNode)):
+                    check_property = check_property.node
+
+                if (n.node.name != "this" or isinstance(check_property, VarAccessNode)) and check_property.name not in identifier.scope:
+                    raise Exception(f"{'Instance of type ' if isinstance(identifier, Instance) else 'Class '}'{identifier.name}' has no property or function '{check_property.name}'.")
+
                 if last_scope == None:
                     last_scope = scope
 
-                identifier.scope.look_back = False
+                #identifier.scope.look_back = False
                 value = self.visit({"name": identifier.name, "instance": isinstance(identifier, Instance)}, identifier.scope, n.property)
-                identifier.scope.look_back = True
+                #identifier.scope.look_back = True
                 return value
 
             case n if issubclass(type(n), DataTypeNode):
@@ -218,7 +243,10 @@ class Interpreter:
                         if isinstance(n, FunctionNode):
                             object = Function(scope, n.name, n.args, n.expressions)
                         elif isinstance(n, ClassNode):
-                            object = Class(scope.copy(), n.name, n.args, n.expressions)
+                            if n.inherit != None:
+                                scope.access(n.inherit.name)
+
+                            object = Class(scope.copy(), n.name, n.args, n.expressions, n.inherit.name if n.inherit != None else None)
                             statics = []
 
                             for i, e in enumerate(n.expressions.expressions):

@@ -17,10 +17,9 @@ class Runtime:
     
     def report(self, error, pos):
         #[pos.start:pos.end]
-        print((pos.line, pos.start, pos.end))
         self.stacktrace = [("<program>", pos)] + self.stacktrace
-        stacktrace = "\n".join([f"  File {self.filename}, {c} at line {p.line}\n    {self.text[p.line - 1]}\n" for c, p in self.stacktrace])
-        last = self.text[pos.line - 1]
+        stacktrace = "\n".join([f"  File {self.filename}, {c} at line {p.line}\n    {self.text[p.line - 1].strip()}\n" for c, p in self.stacktrace])
+        last = "    " + self.text[pos.line - 1].strip()
         print(last)
         arrows = [" "] * (len(last) + 1)
 

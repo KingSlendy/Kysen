@@ -434,9 +434,10 @@ class Function(DataType):
 
 
 class Class(Function):
-    def __init__(self, scope, name, args, expressions):
+    def __init__(self, scope, name, args, expressions, inherit):
         super().__init__(scope, name, args, expressions)
         self.name = name
+        self.inherit = inherit
         self.static = False
 
 
@@ -445,16 +446,17 @@ class Class(Function):
 
     
 class Instance(DataType):
-    def __init__(self, scope, name):
+    def __init__(self, scope, name, parent):
         self.scope = scope
         self.name = name
+        self.parent = parent
         self.scope.assign("this", self)
         BuiltIn.func_assign(self.scope, "ToString", [], [], Instance.Func_ToString)
         self.value = True
 
 
     @staticmethod
-    def Func_ToString(interpreter, scope):
+    def Func_ToString(_, scope):
         self = scope.access("this")
         return String(str(self))
 
@@ -535,7 +537,7 @@ class BuiltIn:
         for kw in kw_args:
             total_args.append(KeywordArgumentNode(kw[0], kw[1]))
 
-        scope.assign(class_name, Class(scope.copy(), class_name, total_args, ExpressionsNode([BuiltInClassNode(func)])))
+        scope.assign(class_name, Class(scope.copy(), class_name, total_args, ExpressionsNode([BuiltInClassNode(func)]), None))
 
 
     @staticmethod
@@ -563,7 +565,7 @@ class BuiltIn:
 
 
 def NumberCache(n):
-    check_n = n + 255
+    check_n = int(n) + 255
     as_float = float(n)
 
     if as_float.is_integer() and -1 < check_n < 510:

@@ -41,10 +41,11 @@ class FunctionNode(DataTypeNode):
 
 
 class ClassNode(DataTypeNode):
-    def __init__(self, name, args, expressions):
+    def __init__(self, name, args, expressions, inherit):
         self.name = name
         self.args = args
         self.expressions = expressions
+        self.inherit = inherit
         self.typed = False
 
 

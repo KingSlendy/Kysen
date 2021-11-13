@@ -210,6 +210,10 @@ class Parser:
             case TOKENS.IDENTIFIER:
                 name = token.value
                 self.advance()
+
+                if self.current.type == TOKENS.FLOAT:
+                    self.runtime.report(SyntaxError("expected identifier."), self.current.pos)
+
                 node = VarAccessNode(name)
 
                 match self.current.type:
@@ -311,7 +315,11 @@ class Parser:
 
         while self.current.type == TOKENS.DOT:
             self.advance()
-            accessors.append(self.parse_binary_expression())
+
+            if self.current.type != TOKENS.IDENTIFIER:
+                self.runtime.report(SyntaxError("expected identifier."), self.current.pos)
+
+            accessors.append(self.parse_factor())
 
         for a in accessors:
             node = PropertyAccessNode(node, a)
@@ -428,8 +436,19 @@ class Parser:
         self.necessary_token_advance(TOKENS.LPAREN)
         args = []
         self.parse_arguments(args)
-        (_, expressions) = self.parse_statement(has_condition = False)
-        return ClassNode(name, args, expressions)
+        self.necessary_token_advance(TOKENS.RPAREN)
+        inherit = None
+
+        if self.current.type == TOKENS.DOTDOT:
+            self.advance()
+
+            if self.current.type != TOKENS.IDENTIFIER:
+                self.runtime.report(SyntaxError("expected identifier."), self.current.pos)
+
+            inherit = self.parse_factor()
+
+        (_, expressions) = self.parse_statement(first_advance = False, has_condition = False)
+        return ClassNode(name, args, expressions, inherit)
 
 
     def parse_arguments(self, args, detect_optional = True):

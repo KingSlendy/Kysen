@@ -280,6 +280,10 @@ class Lexer:
                         self.register_token(Token(TOKENS.DOT).set_pos(self.runline, self.runpos))
                         self.advance()
 
+                case ":":
+                    self.register_token(Token(TOKENS.DOTDOT).set_pos(self.runline, self.runpos))
+                    self.advance()
+
                 case c if c in WHITESPACE:
                     self.register_token(self.make_whitespace_token())
 

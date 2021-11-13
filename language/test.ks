@@ -1,3 +1,75 @@
+#>
+class Test() {
+    this.value = 10;
+
+    func Call() {
+        Console.Print(this.value);
+        Console.Print(this.value2);
+    }
+}
+
+class Test2() : Test {
+    base();
+    this.value = 100;
+    this.value2 = 1000;
+}
+
+t = Test2();
+t.Call(); # 100, 100
+t = Test();
+t.Call(); # 10, Error
+<#
+
+#>
+class Operator(left, op, right) {
+    this.left = left;
+    this.op = op;
+    this.right = right;
+
+    func ToString() {
+        return "(" + String(this.left) + this.op + String(this.right) + ")";
+    }
+}
+
+class Addition(left, right) : Operator {
+    base(left, "+", right);
+}
+
+a = Addition(10, 10);
+Console.Print(String(a));
+<#
+
+#>
+class Test() {
+    this.value = 100;
+
+    func Call() {
+        Console.Print("Hello World!");
+    }
+}
+
+class Test2() : Test {
+    base();
+    Console.Print(base);
+    Console.Print(base.Call);
+    Console.Print(this.value);
+    this.value = 3000;
+    base.value = 1000;
+    this.Call = func() { Console.Print("AAA"); }
+
+    func Call() {
+        base.Call();
+        Console.Print(this.value);
+        Console.Print(base.value);
+    }
+}
+
+t = Test2();
+t.Call();
+#Console.Print(t.value);
+<#
+
+#>
 class Test() {}
 t = Test();
 Console.Print(String(t));
@@ -15,6 +87,7 @@ t = Test2();
 Console.Print(String(t));
 t = Test();
 Console.Print(String(t));
+<#
 
 #>
 class Test() {
@@ -41,7 +114,7 @@ static class Test() {
     static value2 = 30;
 }
 
-Console.Print(Test.value2);
+Console.Print(Test.value2); # 30
 Test.Call(); # Called.
 Console.Print(Test.value); # 10
 a = Test(); # Error
@@ -69,8 +142,8 @@ Console.Print(a.value);
 Console.Print("Passed");
 a.Call(1);
 Console.Print(a.value);
-a.Print = func() {Console.Print("Hello");}
-a.Print();
+#a.Print = func() {Console.Print("Hello");}
+#a.Print();
 <#
 
 #>
@@ -158,6 +231,7 @@ for (i in [0, 1, 2, 3, 4, 5]) {
 #>
 class Test() {
     this.value = 100;
+    this.Call = null;
 }
 
 outside_value = 200;
@@ -168,7 +242,6 @@ t.Call = outside_call;
 t.Call();
 <#
 
-
 #>
 func Print(value) {
     Console.Print(value);
@@ -176,6 +249,7 @@ func Print(value) {
 
 class Test() {
     this.value = 100;
+    this.Print = null;
 }
 
 t = Test();
