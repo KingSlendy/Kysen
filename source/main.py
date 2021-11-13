@@ -1,6 +1,7 @@
 import os, sys
 from errors import RuntimeException
 from runner import Runner
+from time import time
 
 def run(filename, text):
     try:

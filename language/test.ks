@@ -1,6 +1,20 @@
-a = 10;
+class Test() {}
+t = Test();
+Console.Print(String(t));
 
-if (2 {a;}
+class Test2() {
+    this.value = 25;
+    this.value2 = 50;
+
+    func ToString() {
+        return "(" + String(this.value) + ", " + String(this.value2) + ")";
+    }
+}
+
+t = Test2();
+Console.Print(String(t));
+t = Test();
+Console.Print(String(t));
 
 #>
 class Test() {

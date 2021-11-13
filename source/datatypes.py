@@ -1,6 +1,5 @@
-from nodes import ArgumentNode, BuiltInClassNode, BuiltInFunctionNode, ExpressionsNode, KeywordArgumentNode, VarAccessNode
+from nodes import ArgumentNode, BuiltInClassNode, BuiltInFunctionNode, ExpressionsNode, FunctionAccessNode, KeywordArgumentNode, VarAccessNode
 from scope import Scope
-from time import time
 
 TYPE_SCOPE = Scope()
 
@@ -22,6 +21,26 @@ class DataType:
 class Number(DataType):
     def __init__(self, value):
         super().__init__(TYPE_SCOPE, value)
+
+
+    @staticmethod
+    def Constructor(_, scope):
+        value = scope.access("value")
+
+        match value:
+            case _ if isinstance(value, Number):
+                value = value.value
+            
+            case _ if isinstance(value, Bool):
+                value = 0 if value.value == False else 1
+
+            case _ if isinstance(value, String):
+                try:
+                    value = int(value.value)
+                except ValueError:
+                    value = float(value.value)
+
+        return NumberCache(value)
 
 
     def __pos__(self):
@@ -237,6 +256,23 @@ class Bool(DataType):
         super().__init__(TYPE_SCOPE, value)
 
 
+    @staticmethod
+    def Constructor(_, scope):
+        value = scope.access("value")
+
+        match value:
+            case _ if isinstance(value, Number):
+                value = (value.value == 1)
+            
+            case _ if isinstance(value, Bool):
+                value = value.value
+
+            case _ if isinstance(value, String):
+                value = (len(value.value) > 0)
+
+        return BoolCache(value)
+
+
     def __eq__(self, other):
         if isinstance(other, Bool):
             return BoolCache(self.value == other.value)
@@ -258,6 +294,19 @@ class Bool(DataType):
 class String(DataType):
     def __init__(self, value):
         super().__init__(TYPE_SCOPE, value)
+
+
+    @staticmethod
+    def Constructor(interpreter, scope):
+        value = scope.access("value")
+
+        if isinstance(value, Instance) and "ToString" in value.scope:
+            func_ToString = value.scope.access("ToString")
+            value = BuiltIn.func_access(interpreter, value.scope, func_ToString, [], [])
+        else:
+            value = value.value
+
+        return String(str(value))
 
 
     def __mul__(self, other):
@@ -315,7 +364,13 @@ class Array(DataType):
         BuiltIn.func_assign(self.scope, "Append", ["value"], [], self.Func_Append)
 
 
-    def Func_Append(self, scope):
+    @staticmethod
+    def Constructor(_, scope):
+        value = scope.access("value")
+        return Array(list(value.value))
+    
+
+    def Func_Append(self, _, scope):
         value = scope.access("value")
         self.value.append(value)
 
@@ -366,21 +421,18 @@ class Function(DataType):
 
 
     def copy(self):
-        return Function(self.scope, self.args, self.expressions)
+        return Function(self.scope, self.name, self.args, self.expressions)
 
     
     def __repr__(self):
         return f"<function object {self.name}>"
 
 
-class Class(DataType):
+class Class(Function):
     def __init__(self, scope, name, args, expressions):
-        self.scope = scope
+        super().__init__(scope, name, args, expressions)
         self.name = name
-        self.args = args
-        self.expressions = expressions
         self.static = False
-        self.value = True
 
 
     def __repr__(self):
@@ -392,13 +444,14 @@ class Instance(DataType):
         self.scope = scope
         self.name = name
         self.scope.assign("this", self)
-        BuiltIn.func_assign(self.scope, "ToString", [], [], self.Func_ToString)
+        BuiltIn.func_assign(self.scope, "ToString", [], [], Instance.Func_ToString)
         self.value = True
 
 
-    def Func_ToString(self, scope):
-        obj = scope.access("this")
-        return String(scope, str(obj))
+    @staticmethod
+    def Func_ToString(scope):
+        self = scope.access("this")
+        return String(str(self))
 
 
     def __repr__(self):
@@ -487,39 +540,21 @@ class BuiltIn:
 
 
     @staticmethod
-    def Class_Console(_):
-        pass
-        #BuiltIn.func_assign(scope, "Print", ["value"], [], BuiltIn.Class_Global_Func_Print)
-        #BuiltIn.func_assign(scope, "Timer", [], [], BuiltIn.Class_Global_Func_Timer)
+    def func_access(interpreter, scope, func, args, kw_args):
+        expressions = func.expressions.expressions
 
-        #BuiltIn.func_assign(scope, "Range", ["start"], [("finish", Null(scope.copy())), ("step", Number(scope.copy(), 1))], BuiltIn.Class_Global_Func_Range)
+        if len(expressions) > 0 and not isinstance(expressions[0], BuiltInFunctionNode):
+            total_args = []
 
+            for a in args:
+                total_args.append(ArgumentNode(VarAccessNode(a)))
 
-    @staticmethod
-    def Class_Console_Func_Print(scope):
-        value = scope.access("value")
-        print(value)
+            for kw in kw_args:
+                total_args.append(KeywordArgumentNode(kw[0], kw[1]))
 
-
-    @staticmethod
-    def Func_Timer(scope):
-        return NumberCache(time())
-
-    
-    @staticmethod
-    def Func_Range(scope):
-        start = scope.access("start")
-        finish = scope.access("finish")
-        step = scope.access("step")
-
-        if finish.value == None:
-            finish = start
-            start = NumberCache(0)
-
-        if step.value == 0:
-            raise Exception("'step' argument must be non-zero.")
-        
-        return Array(scope.copy(), list(range(start.value, finish.value, step.value)))
+            return interpreter.visit(None, scope, FunctionAccessNode(func, total_args))
+        else:
+            return interpreter.visit(None, scope, func)
 
 
 def NumberCache(n):

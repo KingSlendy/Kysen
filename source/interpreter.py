@@ -1,17 +1,10 @@
+from builtin import builtin_add_all
 from datatypes import *
 from nodes import *
 from scope import Scope
 
 global_scope = Scope()
-
-# Global
-BuiltIn.func_assign(global_scope, "Range", ["start"], [("finish", NULL_TYPE), ("step", NumberCache(1))], BuiltIn.Func_Range)
-BuiltIn.func_assign(global_scope, "Timer", [], [], BuiltIn.Func_Timer)
-
-# Console
-BuiltIn.class_assign(global_scope, "Console", [], [], BuiltIn.Class_Console)
-BuiltIn.static_assign(global_scope, "Console", "Print", ["value"], [], BuiltIn.Class_Console_Func_Print)
-
+builtin_add_all(global_scope)
 
 last_scope = None
 
@@ -405,10 +398,10 @@ class Interpreter:
                 return node
 
             case n if isinstance(n, BuiltInFunctionNode):
-                return ReturnNode(n.expressions(scope))
+                return ReturnNode(n.expressions(self, scope))
 
             case n if isinstance(n, BuiltInClassNode):
-                return n.expressions(scope)
+                return ReturnNode(n.expressions(self, scope))
 
             case n:
                 raise Exception(f"Invalid node: {n}")
