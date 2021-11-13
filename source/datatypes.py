@@ -10,6 +10,17 @@ class DataType:
         self.static = False
 
 
+    @staticmethod
+    def func_default(interpreter, inst, name):
+        if isinstance(inst, Instance) and name in inst.scope:
+            func_ToString = inst.scope.access(name)
+            value = BuiltIn.func_access(interpreter, inst.scope, func_ToString, [], [])
+        else:
+            value = inst.value
+
+        return value
+
+
     def copy(self):
         return self
 
@@ -299,13 +310,7 @@ class String(DataType):
     @staticmethod
     def Constructor(interpreter, scope):
         value = scope.access("value")
-
-        if isinstance(value, Instance) and "ToString" in value.scope:
-            func_ToString = value.scope.access("ToString")
-            value = BuiltIn.func_access(interpreter, value.scope, func_ToString, [], [])
-        else:
-            value = value.value
-
+        value = DataType.func_default(interpreter, value, "ToString")
         return String(str(value))
 
 
@@ -449,7 +454,7 @@ class Instance(DataType):
 
 
     @staticmethod
-    def Func_ToString(scope):
+    def Func_ToString(interpreter, scope):
         self = scope.access("this")
         return String(str(self))
 
@@ -554,7 +559,7 @@ class BuiltIn:
 
             return interpreter.visit(None, scope, FunctionAccessNode(func, total_args))
         else:
-            return interpreter.visit(None, scope, func)
+            return expressions[0].expressions(interpreter, scope)
 
 
 def NumberCache(n):
