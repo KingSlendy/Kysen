@@ -1,4 +1,4 @@
-from builtin import builtin_add_all
+from builtin import builtin_add_all, UNITTEST
 from datatypes import *
 from nodes import *
 from scope import Scope
@@ -26,7 +26,7 @@ class Interpreter:
                 for e in n.expressions:
                     value = self.visit(context, scope, e)
 
-                    if isinstance(value, (ReturnNode, ContinueNode, BreakNode)):
+                    if isinstance(value, (ReturnNode, ContinueNode, BreakNode, UNITTEST)):
                         return value
 
                     results.append(value)
@@ -191,6 +191,10 @@ class Interpreter:
 
                 # Visit the all the Function/Class expressions.
                 value = self.visit(context, scope, identifier.expressions)
+
+                # Unit test purposes
+                if isinstance(value, UNITTEST):
+                    return value
 
                 if isinstance(value, ReturnNode):
                     if value.expression != None and not isinstance(value.expression, DataType):
@@ -386,6 +390,10 @@ class Interpreter:
                     scope.assign(n.identifier, x)
                     value = self.visit(context, scope, n.expressions)
 
+                    # Unit test purposes
+                    if isinstance(value, UNITTEST):
+                        return value
+
                     if isinstance(value, ReturnNode):
                         return value
                     elif isinstance(value, ContinueNode):
@@ -402,6 +410,10 @@ class Interpreter:
 
                     value = self.visit(context, scope, n.expressions)
 
+                    # Unit test purposes
+                    if isinstance(value, UNITTEST):
+                        return value
+
                     if isinstance(value, ReturnNode):
                         return value
                     elif isinstance(value, ContinueNode):
@@ -409,7 +421,7 @@ class Interpreter:
                     elif isinstance(value, BreakNode):
                         break
 
-            case n if isinstance(n, (ReturnNode, ContinueNode, BreakNode, DataType)):
+            case n if isinstance(n, (ReturnNode, ContinueNode, BreakNode, DataType, UNITTEST)):
                 return n
 
             case n if isinstance(n, StaticNode):

@@ -1,11 +1,22 @@
 from datatypes import *
 from time import time
+
+class UNITTEST:
+    def __init__(self, value):
+        self.value = value
+
+
+    def copy(self):
+        return self
+
+
+def Func_UNITTEST(_, scope):
+    value = scope.access("value")
+    return UNITTEST(value)
+
+
 def Class_Console(_, scope):
     pass
-    #BuiltIn.func_assign(scope, "Print", ["value"], [], BuiltIn.Class_Global_Func_Print)
-    #BuiltIn.func_assign(scope, "Timer", [], [], BuiltIn.Class_Global_Func_Timer)
-
-    #BuiltIn.func_assign(scope, "Range", ["start"], [("finish", Null(scope.copy())), ("step", Number(scope.copy(), 1))], BuiltIn.Class_Global_Func_Range)
 
 
 def Class_Console_Func_Print(_, scope):
@@ -33,6 +44,9 @@ def Func_Range(_, scope):
 
 
 def builtin_add_all(scope):
+    # - Unit Test - #
+    BuiltIn.func_assign(scope, "UNITTEST", ["value"], [], Func_UNITTEST)
+
     # Types
 
     # - Number - #
