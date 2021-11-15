@@ -1,9 +1,10 @@
 from errors import RuntimeException
 
 class Runtime:
-    def __init__(self, filename, text):
+    def __init__(self, filename, text, unittest = False):
         self.filename = filename
         self.text = text.split("\n")
+        self.unittest = unittest
         self.stacktrace = []
 
 

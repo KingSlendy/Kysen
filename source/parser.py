@@ -114,7 +114,6 @@ class Parser:
             pos.start = pos.end + 1
             pos.end = pos.start
             self.runtime.report(SyntaxError(f"expected '{type.value}'."), pos)
-            #raise Exception(f"Expected '{type.value}'")
 
         self.advance()
 
@@ -125,7 +124,6 @@ class Parser:
             pos.start = pos.end + 1
             pos.end = pos.start
             self.runtime.report(SyntaxError(f"expected '{keyword.value}'."), pos)
-            #raise Exception(f"Expected keyword '{keyword.value}'")
 
         self.advance()
 

@@ -19,4 +19,8 @@ class Runner:
         parser = Parser(lexer.tokens, runtime)
         #print(parser.tree)
         interpreter = Interpreter(parser.tree, runtime)
-        return interpreter.result
+
+        if len(interpreter.result) == 1 and interpreter.result[0].value != None:
+            return interpreter.result[0]
+            
+        return None

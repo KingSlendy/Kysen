@@ -1,20 +1,6 @@
 from datatypes import *
 from time import time
 
-class UNITTEST:
-    def __init__(self, value):
-        self.value = value
-
-
-    def copy(self):
-        return self
-
-
-def Func_UNITTEST(_, scope):
-    value = scope.access("value")
-    return UNITTEST(value)
-
-
 def Class_Console(_, scope):
     pass
 
@@ -40,13 +26,15 @@ def Func_Range(_, scope):
     if step.value == 0:
         raise Exception("'step' argument must be non-zero.")
     
-    return Array(scope.copy(), list(range(start.value, finish.value, step.value)))
+    r = list(range(start.value, finish.value, step.value))
+
+    for i, n in enumerate(r):
+        r[i] = NumberCache(n)
+
+    return Array(scope.copy(), r)
 
 
 def builtin_add_all(scope):
-    # - Unit Test - #
-    BuiltIn.func_assign(scope, "UNITTEST", ["value"], [], Func_UNITTEST)
-
     # Types
 
     # - Number - #

@@ -177,14 +177,18 @@ class Lexer:
         pos_start = self.runpos
         value = ""
         self.advance()
+        escape_chars = {"n": "\n", "r": "\r", "t": "\t"}
         escape = False
 
         while self.current != None and (escape or self.current != "\""):
-            escape = False
-            value += self.current
-
-            if self.current == "\\":
-                escape = not escape
+            if escape:
+                value += escape_chars[self.current]
+                escape = False
+            else:
+                if self.current == "\\":
+                    escape = not escape
+                else:
+                    value += self.current
 
             self.advance()
 

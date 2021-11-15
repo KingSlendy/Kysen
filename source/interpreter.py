@@ -1,4 +1,4 @@
-from builtin import builtin_add_all, UNITTEST
+from builtin import builtin_add_all
 from datatypes import *
 from nodes import *
 from scope import Scope
@@ -26,18 +26,12 @@ class Interpreter:
                 for e in n.expressions:
                     value = self.visit(context, scope, e)
 
-                    if isinstance(value, (ReturnNode, ContinueNode, BreakNode, UNITTEST)):
+                    if isinstance(value, (ReturnNode, ContinueNode, BreakNode)):
                         return value
 
                     results.append(value)
 
-                if len(results) == 1:
-                    result = results[0]
-
-                    if isinstance(result, DataType) and not isinstance(result, Null):
-                        return result
-
-                return None
+                return results
 
             case n if isinstance(n, VarAssignNode):
                 old_scope = scope
@@ -192,10 +186,6 @@ class Interpreter:
                 # Visit the all the Function/Class expressions.
                 value = self.visit(context, scope, identifier.expressions)
 
-                # Unit test purposes
-                if isinstance(value, UNITTEST):
-                    return value
-
                 if isinstance(value, ReturnNode):
                     if value.expression != None and not isinstance(value.expression, DataType):
                         value = self.visit(context, scope, value.expression)
@@ -239,6 +229,7 @@ class Interpreter:
                 match n:
                     case _ if isinstance(n, ArrayNode):
                         for i, v in enumerate(n.value):
+                            print(v)
                             n.value[i] = self.visit(context, scope, v)
 
                         return Array(scope.copy(), n.value)
@@ -390,10 +381,6 @@ class Interpreter:
                     scope.assign(n.identifier, x)
                     value = self.visit(context, scope, n.expressions)
 
-                    # Unit test purposes
-                    if isinstance(value, UNITTEST):
-                        return value
-
                     if isinstance(value, ReturnNode):
                         return value
                     elif isinstance(value, ContinueNode):
@@ -410,10 +397,6 @@ class Interpreter:
 
                     value = self.visit(context, scope, n.expressions)
 
-                    # Unit test purposes
-                    if isinstance(value, UNITTEST):
-                        return value
-
                     if isinstance(value, ReturnNode):
                         return value
                     elif isinstance(value, ContinueNode):
@@ -421,7 +404,7 @@ class Interpreter:
                     elif isinstance(value, BreakNode):
                         break
 
-            case n if isinstance(n, (ReturnNode, ContinueNode, BreakNode, DataType, UNITTEST)):
+            case n if isinstance(n, (ReturnNode, ContinueNode, BreakNode, DataType)):
                 return n
 
             case n if isinstance(n, StaticNode):
@@ -447,4 +430,10 @@ class Interpreter:
                 raise Exception(f"Invalid node: {n}")
 
     def run(self):
+        global global_scope
+
+        if self.runtime.unittest:
+            global_scope = Scope()
+            builtin_add_all(global_scope)
+
         self.result = self.visit(None, global_scope, self.tree)
