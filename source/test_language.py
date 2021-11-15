@@ -43,7 +43,7 @@ class TestLanguage(unittest.TestCase):
     def test_classes(self):
         self.assertEqual(language("class Test() { this.value = 10; } t = Test(); t.value;"), 10)
         self.assertEqual(language("class Test() { this.value = 10; } t = Test(); t.value = 100; t.value;"), 100)
-        #self.assertEqual(language("class Test2() { this.value = 30; } t = Test2(); t.value;"), 30) # Fix this not working Idk why
+        self.assertEqual(language("class Test2() { this.value = 30; } t = Test2(); t.value;"), 30) # Fix this not working Idk why
 
 
     def test_unary_operations(self):

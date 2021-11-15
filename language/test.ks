@@ -1,4 +1,12 @@
+time = Timer();
 
+for (n in Range(100000)) {
+    a = 1 + 1;
+}
+
+Console.Print(Timer() - time);
+
+#>
 class Operations(left, right) {
     this.left = left;
     this.right = right;
@@ -20,6 +28,7 @@ op = Operations(10, 15);
 Console.Print(op.Add());
 Console.Print(op.Subtract());
 Console.Print(op.Power());
+<#
 
 #>
 class Test() {

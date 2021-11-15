@@ -21,10 +21,6 @@ class DataType:
         return value
 
 
-    def bind(self, interpreter, expressions):
-        interpreter.visit(None, self.scope, expressions)
-
-
     def copy(self):
         return self
 

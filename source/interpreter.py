@@ -391,12 +391,8 @@ class Interpreter:
                 iterable = self.visit(context, scope, n.iterable)
 
                 for x in iterable:
-                    match type(x).__name__:
-                        case "int":
-                            x = Number(x)
-
-                        case "str":
-                            x = String(scope.copy(), x)
+                    if type(x).__name__ == "str":
+                        x = String(scope.copy(), x)
 
                     scope.assign(n.identifier, x)
                     value = self.visit(context, scope, n.expressions)
