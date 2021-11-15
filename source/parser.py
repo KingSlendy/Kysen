@@ -356,7 +356,6 @@ class Parser:
             else:
                 if self.current.type == TOKENS.RPAREN:
                     self.runtime.report(SyntaxError("unexpected ')'."), self.current.pos)
-                    #raise Exception("Unexpected ')'.")
 
                 self.ignore_token_advance(TOKENS.RPAREN)
 
@@ -368,7 +367,7 @@ class Parser:
 
             case TOKENS.ARROW:
                 self.advance()
-                expressions = ExpressionsNode([ReturnNode(self.parse_expressions())])
+                expressions = ExpressionsNode([ReturnNode(self.parse_binary_expression())])
             
             case _:
                 expressions = self.parse_expressions(once = True)

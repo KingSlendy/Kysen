@@ -183,7 +183,7 @@ class Interpreter:
 
                             scope.assign("base", base)
 
-                # Visit the all the Function/Class expressions.
+                # Visit all the Function/Class expressions.
                 value = self.visit(context, scope, identifier.expressions)
 
                 if isinstance(value, ReturnNode):
@@ -229,7 +229,6 @@ class Interpreter:
                 match n:
                     case _ if isinstance(n, ArrayNode):
                         for i, v in enumerate(n.value):
-                            print(v)
                             n.value[i] = self.visit(context, scope, v)
 
                         return Array(scope.copy(), n.value)

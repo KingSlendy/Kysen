@@ -381,12 +381,17 @@ class Array(DataType):
 
 
     def copy(self):
-        return Array(self.scope, list(self.value))
+        new_value = []
+
+        for v in self.value:
+            new_value.append(v.copy())
+
+        return Array(self.scope, new_value)
 
 
     def __mul__(self, other):
         if isinstance(other, Number):
-            for i in range(other):
+            for _ in range(other):
                 for v in self.value:
                     self.value.append(v)
 

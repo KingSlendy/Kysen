@@ -21,6 +21,24 @@ def language(text):
 
 
 class TestLanguage(unittest.TestCase):
+    def test_arrays(self):
+        self.assertEqual(language("a = [0, 1, 2]; b = a; a[0] = 100; b[0];"), 100)
+
+
+    def test_functions(self):
+        self.assertEqual(language("func Add(a, b) { return a + b; } Add(10, 5);"), 15)
+        self.assertEqual(language("func Add(a = 1, b = 1) { return a + b; } Add();"), 2)
+        self.assertEqual(language("func Add(a = 1, b = 1) { return a + b; } Add(2);"), 3)
+        self.assertEqual(language("func Add(a = 1, b = 1) { return a + b; } Add(2, 2);"), 4)
+        self.assertEqual(language("func Add(a = 1, b = 1) { return a + b; } Add(a = 10);"), 11)
+        self.assertEqual(language("func Add(a = 1, b = 1) { return a + b; } Add(a = 20, b = 20);"), 40)
+        self.assertEqual(language("func Add(a = 1, b = 1) { return a + b; } Add(b = 100);"), 101)
+        self.assertEqual(language("func Add(a = 1, b = 1) { return a + b; } Add(b = 200, a = 200);"), 400)
+        self.assertEqual(language("func Add(a, b) => a + b; Add(15, 30);"), 45)
+        self.assertEqual(language("func Test() { return [[0, 1, 2, 3], [4, 5, 6, 7]]; } a = Test(); a[0][0] = 100; b = Test(); b[0][0];"), 0)
+        self.assertEqual(language("func Test() { return [[0, 1, 2, 3], [4, 5, 6, 7]]; } a = Test(); a[0][0] = 100; b = Test(); a[0][0];"), 100)
+
+
     def test_unary_operations(self):
         self.assertEqual(language("+10;"), 10)
         self.assertEqual(language("-5;"), -5)
