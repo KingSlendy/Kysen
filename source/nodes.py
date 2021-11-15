@@ -29,24 +29,22 @@ class ArrayNode(DataTypeNode):
 
 
 class FunctionNode(DataTypeNode):
-    def __init__(self, name, args, expressions):
+    def __init__(self, name, args, expressions, bound):
         self.name = name
         self.args = args
         self.expressions = expressions
+        self.bound = bound
         self.typed = False
 
     
     def __repr__(self):
-        return f"Func {self.name if self.name != None else '<anonymous>'}({self.args}) {self.expressions}"
+        return f"FUNC {self.name if self.name != None else '<anonymous>'}({self.args}) {self.expressions}"
 
 
-class ClassNode(DataTypeNode):
+class ClassNode(FunctionNode):
     def __init__(self, name, args, expressions, inherit):
-        self.name = name
-        self.args = args
-        self.expressions = expressions
+        super().__init__(name, args, expressions, None)
         self.inherit = inherit
-        self.typed = False
 
 
     def __repr__(self):
@@ -358,6 +356,22 @@ class BuiltInClassNode:
 class ExpressionsNode:
     def __init__(self, expressions):
         self.expressions = expressions
+
+
+    def insert(self, index, value):
+        self.expressions.insert(index, value)
+
+
+    def __getitem__(self, index):
+        return self.value[index]
+
+
+    def __setitem__(self, index, value):
+        self.value[index] = value
+
+
+    def __iter__(self):
+        yield from self.expressions
 
 
     def __repr__(self):

@@ -288,6 +288,9 @@ class Parser:
         args = []
         index = 0
 
+        if self.current.type != TOKENS.LPAREN:
+            self.runtime.report(SyntaxError("expected '('."), self.current.pos)
+
         while self.current.type == TOKENS.LPAREN:
             self.advance()
             args.append([])
@@ -409,8 +412,19 @@ class Parser:
     def parse_function_statement(self):
         self.advance()
         name = None
+        bound_name = None
 
         if self.current.type == TOKENS.IDENTIFIER:
+            name = self.current.value
+            self.advance()
+
+        if self.current.type == TOKENS.DOT:
+            self.advance()
+
+            if self.current.type != TOKENS.IDENTIFIER:
+                self.runtime.report(SyntaxError("expected identifier."), self.current.pos)
+
+            bound_name = name
             name = self.current.value
             self.advance()
 
@@ -418,7 +432,7 @@ class Parser:
         args = []
         self.parse_arguments(args)
         (_, expressions) = self.parse_statement(has_condition = False)
-        return FunctionNode(name, args, expressions)
+        return FunctionNode(name, args, expressions, bound_name)
 
     
     def parse_class_statement(self):
@@ -426,7 +440,6 @@ class Parser:
 
         if self.current.type != TOKENS.IDENTIFIER:
             self.runtime.report(SyntaxError("expected identifier."), self.current.pos)
-            #raise Exception("Expected identifier.")
             
         name = self.current.value
         self.advance()
@@ -442,7 +455,9 @@ class Parser:
             if self.current.type != TOKENS.IDENTIFIER:
                 self.runtime.report(SyntaxError("expected identifier."), self.current.pos)
 
-            inherit = self.parse_factor()
+            node = VarAccessNode(self.current.value)
+            self.advance()
+            inherit = self.parse_function_access(node)
 
         (_, expressions) = self.parse_statement(first_advance = False, has_condition = False)
         return ClassNode(name, args, expressions, inherit)

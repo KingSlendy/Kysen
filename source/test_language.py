@@ -6,15 +6,16 @@ from parser import Parser
 from runtime import Runtime
 
 def language(text):
+    if text == "":
+        return None
+
     runtime = Runtime("<unittest>", text, unittest = True)
     lexer = Lexer(text, runtime)
-    #print(lexer.tokens)
 
     if len(lexer.tokens) == 1:
         return None
 
     parser = Parser(lexer.tokens, runtime)
-    #print(parser.tree)
     interpreter = Interpreter(parser.tree, runtime)
 
     return interpreter.result[-1].value
@@ -37,6 +38,12 @@ class TestLanguage(unittest.TestCase):
         self.assertEqual(language("func Add(a, b) => a + b; Add(15, 30);"), 45)
         self.assertEqual(language("func Test() { return [[0, 1, 2, 3], [4, 5, 6, 7]]; } a = Test(); a[0][0] = 100; b = Test(); b[0][0];"), 0)
         self.assertEqual(language("func Test() { return [[0, 1, 2, 3], [4, 5, 6, 7]]; } a = Test(); a[0][0] = 100; b = Test(); a[0][0];"), 100)
+
+
+    def test_classes(self):
+        self.assertEqual(language("class Test() { this.value = 10; } t = Test(); t.value;"), 10)
+        self.assertEqual(language("class Test() { this.value = 10; } t = Test(); t.value = 100; t.value;"), 100)
+        #self.assertEqual(language("class Test2() { this.value = 30; } t = Test2(); t.value;"), 30) # Fix this not working Idk why
 
 
     def test_unary_operations(self):

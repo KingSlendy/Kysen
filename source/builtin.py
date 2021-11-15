@@ -46,6 +46,9 @@ def builtin_add_all(scope):
     # - String - #
     BuiltIn.class_assign(scope, "String", ["value"], [], String.Constructor)
 
+    # - Array - #
+    BuiltIn.class_assign(scope, "Array", ["value"], [], Array.Constructor)
+
     # Misc
     BuiltIn.func_assign(scope, "Range", ["start"], [("finish", NULL_TYPE), ("step", NumberCache(1))], Func_Range)
     BuiltIn.func_assign(scope, "Timer", [], [], Func_Timer)

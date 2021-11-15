@@ -21,6 +21,10 @@ class DataType:
         return value
 
 
+    def bind(self, interpreter, expressions):
+        interpreter.visit(None, self.scope, expressions)
+
+
     def copy(self):
         return self
 
@@ -303,15 +307,22 @@ class Bool(DataType):
 
 
 class String(DataType):
-    def __init__(self, value):
-        super().__init__(TYPE_SCOPE, value)
+    def __init__(self, scope, value, stop = False):
+        super().__init__(scope, value)
+
+        if not stop:
+            self.scope.assign("this", String(scope, value, stop = True))
+
+        for b in String.bound:
+            self.scope.assign(b.name, Function(self.scope, b.name, b.args, b.expressions))
 
 
     @staticmethod
     def Constructor(interpreter, scope):
         value = scope.access("value")
         value = DataType.func_default(interpreter, value, "ToString")
-        return String(str(value))
+        scope.remove("value")
+        return String(scope, str(value))
 
 
     def __mul__(self, other):
@@ -327,14 +338,14 @@ class String(DataType):
 
     def __add__(self, other):
         if isinstance(other, String):
-            return String(self.value + other.value)
+            return String(self.scope, self.value + other.value)
         
         return NotImplemented
 
 
     def __radd__(self, other):
         if isinstance(other, String):
-            return String(other.value + self.value)
+            return String(self.scope, other.value + self.value)
         
         return NotImplemented
 
@@ -355,7 +366,7 @@ class String(DataType):
 
     def __getitem__(self, index):
         if isinstance(index, Number):
-            return self.value[index.value]
+            return String(self.scope, self.value[index.value])
 
 
     def __setitem__(self, index, value):
@@ -363,10 +374,22 @@ class String(DataType):
             self.value[index.value] = value
 
 
+    def __iter__(self):
+        yield from self.value
+String.bound = []
+
+
 class Array(DataType):
-    def __init__(self, scope, value):
+    def __init__(self, scope, value, stop = False):
         super().__init__(scope, value)
+
+        if not stop:
+            self.scope.assign("this", Array(scope, value, stop = True))
+
         BuiltIn.func_assign(self.scope, "Append", ["value"], [], self.Func_Append)
+
+        for b in Array.bound:
+            self.scope.assign(b.name, Function(self.scope, b.name, b.args, b.expressions))
 
 
     @staticmethod
@@ -419,6 +442,7 @@ class Array(DataType):
 
     def __iter__(self):
         yield from self.value
+Array.bound = []
 
 
 class Function(DataType):

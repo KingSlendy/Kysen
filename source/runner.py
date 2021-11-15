@@ -20,7 +20,10 @@ class Runner:
         #print(parser.tree)
         interpreter = Interpreter(parser.tree, runtime)
 
-        if len(interpreter.result) == 1 and interpreter.result[0].value != None:
-            return interpreter.result[0]
+        if len(interpreter.result) == 1:
+            result = interpreter.result[0]
+
+            if result != None and result.value != None:
+                return result
 
         return None

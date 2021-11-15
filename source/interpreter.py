@@ -109,6 +109,7 @@ class Interpreter:
                 if last_scope != None:
                     old_scope = last_scope
                     last_scope = None
+
                 if not isinstance(identifier, (Function, Class)):
                     raise Exception(f"Cannot instantiate or call a value of type '{type(identifier).__name__}'.")
 
@@ -163,25 +164,18 @@ class Interpreter:
                 if instance != None:
                     # This instance inherits from another class.
                     if instance.parent.inherit != None:
-                        base = None
+                        base = self.visit(context, scope, instance.parent.inherit)
 
-                        # Check for the "base()" initializer in the expressions.
-                        for i, e in enumerate(identifier.expressions.expressions):
-                            if isinstance(e, FunctionAccessNode) and e.node.name == "base":
-                                base = self.visit(context, scope, FunctionAccessNode(scope.access(instance.parent.inherit), e.args))
-                                del identifier.expressions.expressions[i]
+                        for k, v in base.scope.items():
+                            if k != "this":
+                                value = v.copy()
 
-                        if base != None:
-                            for k, v in base.scope.items():
-                                if k != "this":
-                                    value = v.copy()
+                                if isinstance(v, (Function, Class)):
+                                    value.scope = scope.copy()
 
-                                    if isinstance(v, (Function, Class)):
-                                        value.scope = scope.copy()
+                                scope.assign(k, value)
 
-                                    scope.assign(k, value)
-
-                            scope.assign("base", base)
+                        scope.assign("base", base)
 
                 # Visit all the Function/Class expressions.
                 value = self.visit(context, scope, identifier.expressions)
@@ -202,11 +196,11 @@ class Interpreter:
             case n if isinstance(n, PropertyAccessNode):
                 identifier = self.visit(context, scope, n.node)
 
-                if not isinstance(identifier, (Array, Class, Instance)):
+                if not isinstance(identifier, (String, Array, Class, Instance)):
                     raise Exception(f"Cannot check for properties in variable of type '{type(identifier).__name__}'.")
 
-                if isinstance(identifier, Array):
-                    identifier.name = "Array"
+                if isinstance(identifier, (String, Array)):
+                    identifier.name = type(identifier).__name__
 
                 if isinstance(n.property, VarAssignNode):
                     if scope != identifier.scope and not n.property.name in identifier.scope:
@@ -228,6 +222,9 @@ class Interpreter:
 
             case n if issubclass(type(n), DataTypeNode):
                 match n:
+                    case _ if isinstance(n, StringNode):
+                        return String(scope.copy(), n.value)
+
                     case _ if isinstance(n, ArrayNode):
                         for i, v in enumerate(n.value):
                             n.value[i] = self.visit(context, scope, v)
@@ -235,16 +232,32 @@ class Interpreter:
                         return Array(scope.copy(), n.value)
 
                     case _ if isinstance(n, (FunctionNode, ClassNode)):
-                        if isinstance(n, FunctionNode):
-                            object = Function(scope, n.name, n.args, n.expressions)
-                        elif isinstance(n, ClassNode):
-                            if n.inherit != None:
-                                scope.access(n.inherit.name)
+                        object = None
 
-                            object = Class(scope.copy(), n.name, n.args, n.expressions, n.inherit.name if n.inherit != None else None)
+                        if type(n) == FunctionNode:
+                            if n.bound != None:
+                                match n.bound:
+                                    case "String":
+                                        String.bound.append(n)
+
+                                    case "Array":
+                                        Array.bound.append(n)
+
+                                    case _:
+                                        bind = scope.access(n.bound)
+                                        bind.expressions.insert(0, n)
+
+                                n.bound = None
+                            else:
+                                object = Function(scope, n.name, n.args, n.expressions)
+                        elif type(n) == ClassNode:
+                            if n.inherit != None:
+                                scope.access(n.inherit.node.name)
+
+                            object = Class(scope.copy(), n.name, n.args, n.expressions, n.inherit)
                             statics = []
 
-                            for i, e in enumerate(n.expressions.expressions):
+                            for i, e in enumerate(n.expressions):
                                 if isinstance(e, StaticNode):
                                     self.visit(context, object.scope, e.node)
                                     statics.append(i)
@@ -253,12 +266,12 @@ class Interpreter:
                             statics.reverse()
 
                             for s in statics:
-                                del n.expressions.expressions[s]
+                                del n.expressions[s]
 
-                        if n.name != None:
+                        if n.name != None and n.bound == None:
                             scope.assign(n.name, object)
-
-                        return object
+                        else:
+                            return object
 
                     case _ if isinstance(n, NullNode):
                         return NULL_TYPE
@@ -270,11 +283,27 @@ class Interpreter:
                     case _:
                         cast_type = {
                             NumberNode: NumberCache,
-                            BoolNode: BoolCache,
-                            StringNode: String
+                            BoolNode: BoolCache
                         }[type(n)]
 
                         return cast_type(n.value)
+
+
+            case n if issubclass(type(n), UnaryOperationNode):
+                right = self.visit(context, scope, n.right)
+
+                match type(n):
+                    case _ if isinstance(n, PositiveNode):
+                        return right
+
+                    case _ if isinstance(n, NegativeNode):
+                        return -right
+
+                    case _ if isinstance(n, NotNode):
+                        return BoolCache(not right.value)
+
+                    case _ if isinstance(n, BitNotNode):
+                        return ~right
 
             case n if issubclass(type(n), BinaryOperationNode):
                 if n.assignment:
@@ -348,22 +377,6 @@ class Interpreter:
 
                         return BoolCache(False)
 
-            case n if issubclass(type(n), UnaryOperationNode):
-                right = self.visit(context, scope, n.right)
-
-                match type(n):
-                    case _ if isinstance(n, PositiveNode):
-                        return right
-
-                    case _ if isinstance(n, NegativeNode):
-                        return -right
-
-                    case _ if isinstance(n, NotNode):
-                        return BoolCache(not right.value)
-
-                    case _ if isinstance(n, BitNotNode):
-                        return ~right
-
             case n if isinstance(n, IfNode):
                 for c, e in n.if_clauses:
                     condition = self.visit(context, scope, c)
@@ -378,6 +391,13 @@ class Interpreter:
                 iterable = self.visit(context, scope, n.iterable)
 
                 for x in iterable:
+                    match type(x).__name__:
+                        case "int":
+                            x = Number(x)
+
+                        case "str":
+                            x = String(scope.copy(), x)
+
                     scope.assign(n.identifier, x)
                     value = self.visit(context, scope, n.expressions)
 
@@ -414,16 +434,13 @@ class Interpreter:
                 node = self.visit(context, scope, n.node)
                 node.static = True
 
-                for e in n.node.expressions.expressions:
+                for e in n.node.expressions:
                     if not isinstance(e, StaticNode):
                         raise Exception("Static classes can't have non-static properties.")
 
                 return node
 
-            case n if isinstance(n, BuiltInFunctionNode):
-                return ReturnNode(n.expressions(self, scope))
-
-            case n if isinstance(n, BuiltInClassNode):
+            case n if isinstance(n, (BuiltInFunctionNode, BuiltInClassNode)):
                 return ReturnNode(n.expressions(self, scope))
 
             case n:

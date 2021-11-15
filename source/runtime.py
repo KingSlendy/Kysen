@@ -21,8 +21,8 @@ class Runtime:
         self.stacktrace = [("<program>", pos)] + self.stacktrace
         stacktrace = "\n".join([f"  File {self.filename}, {c} at line {p.line}\n    {self.text[p.line - 1].strip()}\n" for c, p in self.stacktrace])
         last = "    " + self.text[pos.line - 1].strip()
-        print(last)
         arrows = [" "] * (len(last) + 1)
+        #arrows[pos.end] = "^"
 
         for i in range(pos.start, pos.end + 1):
             arrows[i] = "^"

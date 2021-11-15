@@ -1,3 +1,74 @@
+
+class Operations(left, right) {
+    this.left = left;
+    this.right = right;
+
+    func Add() {
+        return this.left + this.right;
+    }
+
+    func Subtract() {
+        return this.left - this.right;
+    }
+}
+
+func Operations.Power() {
+    return this.left ** this.right;
+}
+
+op = Operations(10, 15);
+Console.Print(op.Add());
+Console.Print(op.Subtract());
+Console.Print(op.Power());
+
+#>
+class Test() {
+    this.value = 10;
+}
+
+func Test.Call() {
+    Console.Print("Hello World!");
+    Console.Print(this.value);
+}
+
+t = Test();
+t.Call();
+<#
+
+#>
+func String.Reverse() {
+    new_str = "";
+
+    for (char in this) {
+        new_str = char + new_str;
+    }
+
+    return new_str;
+}
+
+a = "Hello";
+#a.Reverse();
+Console.Print(a.Reverse());
+<#
+
+#>
+func Array.Filter(function) {
+    new_array = [];
+
+    for (x in this) {
+        if (function(x)) {
+            new_array.Append(x);
+        }
+    }
+
+    return new_array;
+}
+
+a = [0, 0, 1, 2, 3, 0, 5, 11, 0, 0, 10];
+a = a.Filter(func(x) => (x != 0));
+Console.Print(a); # [1, 2, 3, 5, 11, 10]
+<#
+
 #>
 class Test() {
     this.value = 10;
