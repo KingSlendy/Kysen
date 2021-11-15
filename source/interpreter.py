@@ -202,8 +202,11 @@ class Interpreter:
             case n if isinstance(n, PropertyAccessNode):
                 identifier = self.visit(context, scope, n.node)
 
-                if not isinstance(identifier, (Class, Instance)):
+                if not isinstance(identifier, (Array, Class, Instance)):
                     raise Exception(f"Cannot check for properties in variable of type '{type(identifier).__name__}'.")
+
+                if isinstance(identifier, Array):
+                    identifier.name = "Array"
 
                 if isinstance(n.property, VarAssignNode):
                     if scope != identifier.scope and not n.property.name in identifier.scope:
@@ -220,9 +223,7 @@ class Interpreter:
                 if last_scope == None:
                     last_scope = scope
 
-                #identifier.scope.look_back = False
                 value = self.visit({"name": identifier.name, "instance": isinstance(identifier, Instance)}, identifier.scope, n.property)
-                #identifier.scope.look_back = True
                 return value
 
             case n if issubclass(type(n), DataTypeNode):
