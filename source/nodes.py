@@ -368,12 +368,8 @@ class ExpressionsNode(Node):
         self.expressions.insert(index, value)
 
 
-    def __getitem__(self, index):
-        return self.value[index]
-
-
-    def __setitem__(self, index, value):
-        self.value[index] = value
+    def __delitem__(self, index):
+        del self.expressions[index]
 
 
     def __iter__(self):

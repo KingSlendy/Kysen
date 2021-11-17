@@ -1,12 +1,3 @@
-class Iterable() {
-    this.Test => {
-        assign {}
-        access {}
-    }
-}
-
-i = Iterable();
-
 #>
 class Operations(left, right) {
     this.left = left;
@@ -120,36 +111,6 @@ Console.Print(String(a));
 <#
 
 #>
-class Test() {
-    this.value = 100;
-
-    func Call() {
-        Console.Print("Hello World!");
-    }
-}
-
-class Test2() : Test {
-    base();
-    Console.Print(base);
-    Console.Print(base.Call);
-    Console.Print(this.value);
-    this.value = 3000;
-    base.value = 1000;
-    this.Call = func() { Console.Print("AAA"); }
-
-    func Call() {
-        base.Call();
-        Console.Print(this.value);
-        Console.Print(base.value);
-    }
-}
-
-t = Test2();
-t.Call();
-#Console.Print(t.value);
-<#
-
-#>
 class Test() {}
 t = Test();
 Console.Print(String(t));
@@ -169,40 +130,11 @@ t = Test();
 Console.Print(String(t));
 <#
 
-#>
-class Test() {
-    this.value = 10;
-    Console.Print(this.value);
-    this.value = 30;
-    Console.Print(this.value);
-}
-
-Console.Print("A");
-a = Test();
-Console.Print(a.value);
-<#
-
-#>
-Console.Print("Hello!");
-
-static class Test() {
-    static func Call() {
-        Console.Print("Called.");
-    }
-
-    static value = 10;
-    static value2 = 30;
-}
-
-Console.Print(Test.value2); # 30
-Test.Call(); # Called.
-Console.Print(Test.value); # 10
-a = Test(); # Error
-<#
 
 #>
 class Test() {
     this.value = 10;
+    this.Print = null;
     Console.Print(this.value);
 
     func Call(value) {
@@ -222,157 +154,7 @@ Console.Print(a.value);
 Console.Print("Passed");
 a.Call(1);
 Console.Print(a.value);
-#a.Print = func() {Console.Print("Hello");}
-#a.Print();
-<#
-
-#>
-class Inside() {
-    func Message() {
-        return func() {Console.Print("Hey, it works!");}
-    }
-}
-
-class Outside() {
-    this.inside = Inside();
-}
-
-t = Outside();
-t.inside.Message()();
-<#
-
-#>
-class Test() {
-    func Inside() {
-        return func() {return 0;}
-    }
-}
-
-#Test.Inside();
-a = [100, 200, 300, 400];
-b = 1;
-Console.Print(a[b]);
-t = Test();
-Console.Print(a[t.Inside()()]);
-<#
-
-#>
-a = 40;
-
-if (a == 10) {
-    a = 20;
-    b = 10;
-    Console.Print(a);
-    Console.Print(b);
-} elif (a == 20) {
-    a = 30;
-    b = 20;
-    Console.Print(a);
-    Console.Print(b);
-} elif (a == 30) {
-    a = 40;
-    b = 30;
-    Console.Print(a);
-    Console.Print(b);
-} else {
-    a = -10;
-    b = -20;
-    Console.Print(a);
-    Console.Print(b);
-}
-
-Console.Print(a);
-<#
-
-#>
-i = 0;
-
-while (i < 10) {
-    if (i == 5) {
-        i += 1;
-        continue;
-    }
-
-    Console.Print(i);
-    i += 1;
-}
-<#
-
-#>
-for (i in [0, 1, 2, 3, 4, 5]) {
-    if (i == 3) {
-        continue;
-    }
-
-    Console.Print(i);
-}
-<#
-
-#>
-class Test() {
-    this.value = 100;
-    this.Call = null;
-}
-
-outside_value = 200;
-outside_call = func() {Console.Print(outside_value);}
-
-t = Test();
-t.Call = outside_call;
-t.Call();
-<#
-
-#>
-func Print(value) {
-    Console.Print(value);
-}
-
-class Test() {
-    this.value = 100;
-    this.Print = null;
-}
-
-t = Test();
-t.Print = func(value) {Print(value);}
-t.Print(1);
-<#
-
-#>
-if (2 == 2) {
-    a = 1;
-} else
-    a = 2;
-
-Console.Print(a);
-for (n in [0, 1]) Console.Print(n);
-<#
-
-#>
-class Date() {
-    seconds = 0;
-
-    Hour => {
-        assign {
-            seconds = (value % 24) * 3600;
-        }
-
-        access {
-            return seconds / 3600;
-        }
-    }
-}
-
-d = Date();
-d.Hour = 30;
-Console.Print(d.Hour);
-<#
-
-#>
-time = Timer();
-
-for (n in Range(100000)) {
-    1 + 1;
-}
-
-Console.Print(Timer() - time);
+Print = Console.Print;
+a.Print = func() { Print("Hello"); }
+a.Print();
 <#

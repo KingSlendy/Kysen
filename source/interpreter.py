@@ -208,11 +208,11 @@ class Interpreter:
 
                 check_property = n.property
 
-                while not isinstance(check_property, (VarAssignNode, VarAccessNode)):
+                while not isinstance(check_property, (VarAssignNode, VarAccessNode, AttributeNode)):
                     check_property = check_property.node
 
                 if (n.node.name != "this" or isinstance(check_property, VarAccessNode)) and check_property.name not in identifier.scope:
-                    raise Exception(f"{'Instance of type ' if isinstance(identifier, Instance) else 'Class '}'{identifier.name}' has no property or function '{check_property.name}'.")
+                    raise Exception(f"{'Instance of type ' if isinstance(identifier, Instance) else 'Class '}'{identifier.name}' has no property '{check_property.name}'.")
 
                 if last_scope == None:
                     last_scope = scope
@@ -428,7 +428,7 @@ class Interpreter:
                     raise Exception("Cannot use 'static' outside of a class definition.")
                 
                 node = self.visit(context, scope, n.node)
-                node.static = True
+                scope.access(n.node.name).static = True
 
                 for e in n.node.expressions:
                     if not isinstance(e, StaticNode):
@@ -451,3 +451,6 @@ class Interpreter:
             last_scope = None
 
         self.result = self.visit(None, global_scope, self.tree)
+
+        if type(self.result) == ReturnNode:
+            raise Exception("Cannot use 'return' keyword outside of statements.")

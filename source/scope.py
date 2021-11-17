@@ -14,7 +14,6 @@ class Scope:
             if self.parent != None:
                 return self.parent.access(key)
             else:
-                print(self)
                 raise Exception(f"Variable '{key}' not declared in current scope.")
 
         return self.table[key]

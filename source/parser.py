@@ -370,7 +370,8 @@ class Parser:
 
             case TOKENS.ARROW:
                 self.advance()
-                expressions = ExpressionsNode([ReturnNode(self.parse_binary_expression())])
+                expressions = self.parse_expressions(once = True)
+                expressions.expressions[0] = ReturnNode(expressions.expressions[0])
             
             case _:
                 expressions = self.parse_expressions(once = True)
@@ -510,7 +511,6 @@ class Parser:
             self.necessary_token_advance(TOKENS.RCURLY)
         else:
             self.runtime.report(SyntaxError("expected keyword(s) 'assign', 'access'."), self.current.pos)
-            #raise Exception("Expected keyword(s): 'assign', 'access'.")
 
         return AttributeNode(name, assign_expressions, access_expressions)
 
