@@ -1,10 +1,11 @@
-time = Timer();
-
-for (n in Range(100000)) {
-    a = 1 + 1;
+class Iterable() {
+    this.Test => {
+        assign {}
+        access {}
+    }
 }
 
-Console.Print(Timer() - time);
+i = Iterable();
 
 #>
 class Operations(left, right) {
@@ -56,7 +57,6 @@ func String.Reverse() {
 }
 
 a = "Hello";
-#a.Reverse();
 Console.Print(a.Reverse());
 <#
 

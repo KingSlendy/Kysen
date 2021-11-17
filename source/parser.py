@@ -182,11 +182,11 @@ class Parser:
 
                     case KEYWORDS.CONTINUE:
                         self.advance()
-                        return ContinueNode()
+                        return CONTINUE_NODE
                     
                     case KEYWORDS.BREAK:
                         self.advance()
-                        return BreakNode()
+                        return BREAK_NODE
 
                     case KEYWORDS.FUNC:
                         return self.parse_function_statement()

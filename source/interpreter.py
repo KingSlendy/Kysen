@@ -289,7 +289,7 @@ class Interpreter:
                         return cast_type(n.value)
 
 
-            case n if issubclass(type(n), UnaryOperationNode):
+            case n if isinstance(n, UnaryOperationNode):
                 right = self.visit(context, scope, n.right)
 
                 match type(n):
@@ -305,7 +305,7 @@ class Interpreter:
                     case _ if isinstance(n, BitNotNode):
                         return ~right
 
-            case n if issubclass(type(n), BinaryOperationNode):
+            case n if isinstance(n, BinaryOperationNode):
                 if n.assignment:
                     scope.assign(n.left.name, self.visit(context, scope, type(n)(n.left, n.right)))
                     return None
@@ -313,7 +313,7 @@ class Interpreter:
                 left = self.visit(context, scope, n.left)
                 right = self.visit(context, scope, n.right)
 
-                match type(n):
+                match n:
                     case _ if isinstance(n, PoweringNode):
                         return left ** right
 
@@ -391,7 +391,7 @@ class Interpreter:
                 iterable = self.visit(context, scope, n.iterable)
 
                 for x in iterable:
-                    if type(x).__name__ == "str":
+                    if type(x) == str:
                         x = String(scope.copy(), x)
 
                     scope.assign(n.identifier, x)
@@ -443,10 +443,11 @@ class Interpreter:
                 raise Exception(f"Invalid node: {n}")
 
     def run(self):
-        global global_scope
+        global global_scope, last_scope
 
         if self.runtime.unittest:
-            global_scope = Scope()
+            global_scope.clear()
             builtin_add_all(global_scope)
+            last_scope = None
 
         self.result = self.visit(None, global_scope, self.tree)

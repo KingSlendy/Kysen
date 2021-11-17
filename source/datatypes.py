@@ -303,11 +303,9 @@ class Bool(DataType):
 
 
 class String(DataType):
-    def __init__(self, scope, value, stop = False):
+    def __init__(self, scope, value):
         super().__init__(scope, value)
-
-        if not stop:
-            self.scope.assign("this", String(scope, value, stop = True))
+        self.scope.assign("this", self)
 
         for b in String.bound:
             self.scope.assign(b.name, Function(self.scope, b.name, b.args, b.expressions))
@@ -376,12 +374,9 @@ String.bound = []
 
 
 class Array(DataType):
-    def __init__(self, scope, value, stop = False):
+    def __init__(self, scope, value):
         super().__init__(scope, value)
-
-        if not stop:
-            self.scope.assign("this", Array(scope, value, stop = True))
-
+        self.scope.assign("this", self)
         BuiltIn.func_assign(self.scope, "Append", ["value"], [], self.Func_Append)
 
         for b in Array.bound:

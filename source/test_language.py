@@ -43,8 +43,12 @@ class TestLanguage(unittest.TestCase):
     def test_classes(self):
         self.assertEqual(language("class Test() { this.value = 10; } t = Test(); t.value;"), 10)
         self.assertEqual(language("class Test() { this.value = 10; } t = Test(); t.value = 100; t.value;"), 100)
-        self.assertEqual(language("class Test2() { this.value = 30; } t = Test2(); t.value;"), 30) # Fix this not working Idk why
-
+        self.assertEqual(language("class Test2() { this.value = 30; } t = Test2(); t.value;"), 30)
+        self.assertEqual(language("class Test(value) { this.value = value; } t = Test(150); t.value;"), 150)
+        self.assertEqual(language("class Test(left, right) { this.left = left; this.right = right; } t = Test(3, 9); t.left + t.right;"), 12)
+        self.assertEqual(language("class Test(left, right) { this.left = left; this.right = right; func Add() => this.left + this.right; } t = Test(12, 15); t.Add();"), 27)
+        self.assertEqual(language("class Test(left, right) { this.left = left; this.right = right; func Operation() => this.left + this.right; } class Test2(left, right) : Test(left, right) { func Operation() => this.left - this.right; } t = Test(5, 20); t2 = Test2(12, 8); t.Operation() + t2.Operation();"), 29)
+        
 
     def test_unary_operations(self):
         self.assertEqual(language("+10;"), 10)
