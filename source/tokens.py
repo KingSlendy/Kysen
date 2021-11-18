@@ -63,6 +63,7 @@ class KEYWORDS(Enum):
     RETURN = "return"
     CLASS = "class"
     STATIC = "static"
+    NEW = "new"
     OPLEFT = "opleft"
     OPRIGHT = "opright"
     ASSIGN = "assign"

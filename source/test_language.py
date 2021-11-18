@@ -138,7 +138,7 @@ class TestLanguage(unittest.TestCase):
                 this.value = 10;
             }
             
-            t = Test();
+            t = new Test();
             t.value;
         """), 10)
 
@@ -147,7 +147,7 @@ class TestLanguage(unittest.TestCase):
                 this.value = 10;
             }
             
-            t = Test();
+            t = new Test();
             t.value = 100;
             t.value;
         """), 100)
@@ -157,7 +157,7 @@ class TestLanguage(unittest.TestCase):
                 this.value = 30;
             }
             
-            t = Test2();
+            t = new Test2();
             t.value;
         """), 30)
 
@@ -166,7 +166,7 @@ class TestLanguage(unittest.TestCase):
                 this.value = value;
             }
             
-            t = Test(150);
+            t = new Test(150);
             t.value;
         """), 150)
 
@@ -176,7 +176,7 @@ class TestLanguage(unittest.TestCase):
                 this.right = right;
             }
             
-            t = Test(3, 9);
+            t = new Test(3, 9);
             t.left + t.right;
         """), 12)
 
@@ -187,7 +187,7 @@ class TestLanguage(unittest.TestCase):
                 func Add() => this.left + this.right;
             }
             
-            t = Test(12, 15);
+            t = new Test(12, 15);
             t.Add();
         """), 27)
 
@@ -202,8 +202,8 @@ class TestLanguage(unittest.TestCase):
                 func Operation() => this.left - this.right;
             }
             
-            t = Test(5, 20);
-            t2 = Test2(12, 8);
+            t = new Test(5, 20);
+            t2 = new Test2(12, 8);
             t.Operation() + t2.Operation();
         """), 29)
         
@@ -406,7 +406,7 @@ class TestLanguage(unittest.TestCase):
                 return this.left ** this.right;
             }
 
-            op = Operations(3, 4);
+            op = new Operations(3, 4);
             op.Power();
         """), 81)
 
@@ -416,7 +416,7 @@ class TestLanguage(unittest.TestCase):
             }
 
             func Test.Call() => this.value;
-            t = Test();
+            t = new Test();
             t.Call();
         """), 10)
 
@@ -441,7 +441,7 @@ class TestLanguage(unittest.TestCase):
             class Date() {
                 seconds = 0;
 
-                Hour => {
+                Hour {
                     assign {
                         seconds = (value % 24) * 3600;
                     }
@@ -452,7 +452,7 @@ class TestLanguage(unittest.TestCase):
                 }
             }
 
-            d = Date();
+            d = new Date();
             d.Hour = 30;
             d.Hour;
         """), 6)
@@ -466,7 +466,7 @@ class TestLanguage(unittest.TestCase):
             outside_value = 200;
             outside_call = func() { return outside_value; }
 
-            t = Test();
+            t = new Test();
             t.Call = outside_call;
             t.Call();
         """), 200)
@@ -480,7 +480,7 @@ class TestLanguage(unittest.TestCase):
 
             #Test.Inside();
             a = [100, 200, 300, 400];
-            t = Test();
+            t = new Test();
             a[t.Inside()()];
         """), 100)
 
@@ -492,10 +492,10 @@ class TestLanguage(unittest.TestCase):
             }
 
             class Outside() {
-                this.inside = Inside();
+                this.inside = new Inside();
             }
 
-            t = Outside();
+            t = new Outside();
             t.inside.Message()();
         """), "Hey, it works!")
 
@@ -541,20 +541,20 @@ class TestLanguage(unittest.TestCase):
                 static value2 = 30;
             }
 
-            t = Test();
+            t = new Test();
         """)
 
         self.assertEqual(language("""
             class Iterable() {
                 this.a = 100;
 
-                this.Test => {
+                this.Test {
                     assign this.a = value;
                     access => this.a;
                 }
             }
 
-            i = Iterable();
+            i = new Iterable();
             i.Test = 30;
             i.Test;
         """), 30)
@@ -574,7 +574,7 @@ class TestLanguage(unittest.TestCase):
                     base.Call() + base.value + this.value;
             }
 
-            t = Test2();
+            t = new Test2();
             t.Call();
         """), 3215)
 
@@ -594,14 +594,14 @@ class TestLanguage(unittest.TestCase):
                 this.country = "Europe";
 
                 func Info() =>
-                    base.Sound() + "\nName: " + String(this.name) + "\nPrice: " + String(this.price) + "\nColor: " + this.color + "\nCountry: " + this.country;
+                    base.Sound() + "\nName: " + this.name + "\nPrice: " + new String(this.price) + "\nColor: " + this.color + "\nCountry: " + this.country;
             }
 
             class Ferrari488() : Ferrari("Ferrari488", 284700) {
                 func Buy() => "You bought a car with this info:\n" + base.Info();
             }
 
-            c = Ferrari488();
+            c = new Ferrari488();
             c.Buy();
         """), "You bought a car with this info:\nSound: VROOOM\nName: Ferrari488\nPrice: 284700\nColor: Red\nCountry: Europe")
 
@@ -611,6 +611,31 @@ class TestLanguage(unittest.TestCase):
 
             Test(func(a, b) => a + b);
         """), 15)
+
+        self.assertAlmostEqual(language("""
+            class Day(seconds) {
+                this.Seconds = seconds;
+
+                this.Minutes {
+                    assign this.Seconds = value * 60;
+                    access => this.Seconds / 60;
+                }
+
+                this.Hours {
+                    assign this.Seconds = value * 3600;
+                    access => this.Seconds / 3600;
+                }
+
+                this.Day {
+                    assign this.Seconds = value * 3600 * 24;
+                    access => this.Seconds / 3600 / 24;
+                }
+            }
+
+            d = new Day(1482);
+            d.Minutes = 100;
+            d.Hours;
+        """), 1.666666667)
 
 
     def test_errors(self):

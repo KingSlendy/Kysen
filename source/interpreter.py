@@ -101,7 +101,7 @@ class Interpreter:
                 identifier[index_expression] = value_expression
                 return identifier[index_expression]
 
-            case n if isinstance(n, FunctionAccessNode):
+            case n if isinstance(n, (FunctionAccessNode)):
                 identifier = self.visit(context, scope, n.node)
                 context = None
                 old_scope = scope
@@ -109,6 +109,12 @@ class Interpreter:
                 if last_scope != None:
                     old_scope = last_scope
                     last_scope = None
+
+                if type(n) == FunctionAccessNode and type(identifier) == Class:
+                    raise Exception("Class type objects are not callable.")
+
+                if type(n) == ClassAccessNode and type(identifier) == Function:
+                    raise Exception("Function type objects cannot be instantiated.")
 
                 if not isinstance(identifier, (Function, Class)):
                     raise Exception(f"Cannot instantiate or call a value of type '{type(identifier).__name__}'.")

@@ -1,63 +1,6 @@
-
-# Fix operation order
-
-func Array.Filter(function) {
-    new_array = [];
-
-    for (n in this) {
-        if (function(n)) {
-            new_array.Append(n);
-        }
-    }
-
-    return new_array;
+class Test(value) {
+    this.value = value;
 }
-
-a = [0, 0, 1, 2, 3, 0, 0, 0, 4, 5, 0, 0, 0];
-Console.Print(a.Filter(func(x) => (x == 0)));
-
-#>
-class Day(seconds) {
-    this.Seconds = seconds;
-
-    this.Minutes => {
-        assign this.Seconds = value * 60;
-        access => this.Seconds / 60;
-    }
-
-    this.Hours => {
-        assign this.Seconds = value * 3600;
-        access => return this.Seconds / 3600;
-    }
-
-    this.Day => {
-        assign this.Seconds = value * 3600 * 24;
-        access => (this.Seconds / 3600) / 24;
-    }
-}
-
-d = Day(1482);
-d.Minutes = 100;
-Console.Print(d.Day);
-<#
-
-#>
-func Array.Filter(function) {
-    new_array = [];
-
-    for (x in this) {
-        if (function(x)) {
-            new_array.Append(x);
-        }
-    }
-
-    return new_array;
-}
-
-a = [0, 0, 1, 2, 3, 0, 5, 11, 0, 0, 10];
-a = a.Filter(func(x) => (x != 0));
-Console.Print(a); # [1, 2, 3, 5, 11, 10]
-<#
 
 #>
 class Operator(left, op, right) {

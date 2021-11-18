@@ -202,6 +202,11 @@ class Parser:
                         self.advance()
                         return StaticNode(self.parse_binary_expression())
 
+                    case KEYWORDS.NEW:
+                        self.advance()
+                        factor = self.parse_factor()
+                        return ClassAccessNode(factor.node, factor.args)
+
                     case k:
                         raise Exception(f"Invalid keyword: '{k}'")
 
@@ -221,6 +226,9 @@ class Parser:
                         right = self.parse_binary_expression()
                         return operation_node(node, right, assignment = True)
 
+                    case TOKENS.LCURLY:
+                        return self.parse_attribute_expression(node)
+
                     case TOKENS.LBRACKET:
                         node = self.parse_accessors(node)
 
@@ -229,9 +237,6 @@ class Parser:
 
                     case TOKENS.DOT:
                         node = self.parse_property_access(node)
-
-                    case TOKENS.ARROW:
-                        return self.parse_attribute_expression(node)
 
                 if self.current.type == TOKENS.EQUALS:
                     self.advance()
@@ -260,7 +265,6 @@ class Parser:
 
             case _:
                 self.runtime.report(SyntaxError(f"unexpected syntax."), token.pos)
-                #raise Exception(f"Invalid token: '{token}'")
 
 
     def parse_accessors(self, node):
@@ -459,6 +463,7 @@ class Parser:
             node = VarAccessNode(self.current.value)
             self.advance()
             inherit = self.parse_function_access(node)
+            inherit = ClassAccessNode(inherit.node, inherit.args)
 
         (_, expressions) = self.parse_statement(first_advance = False, has_condition = False)
         return ClassNode(name, args, expressions, inherit)
@@ -478,15 +483,14 @@ class Parser:
                 has_optional = True
             else:
                 if detect_optional and has_optional:
-                    raise Exception("Keyword arguments must be at the end.")
+                    self.runtime.report(ArgumentError("keyword arguments must be at the end."))
 
                 node = ArgumentNode(arg)
 
             args.append(node)
 
             if self.current.type not in (TOKENS.COMMA, TOKENS.RPAREN):
-                self.runtime.report(SyntaxError("expected ',', ')'."), self.current.pos)
-                #raise Exception("Expected ',' or ')'.")
+                self.runtime.report(SyntaxError("expected ',' or ')'."), self.current.pos)
 
             if self.current.type == TOKENS.COMMA:
                 self.advance()
@@ -495,7 +499,6 @@ class Parser:
     def parse_attribute_expression(self, node):
         name = node.name
         self.advance()
-        self.necessary_token_advance(TOKENS.LCURLY)
 
         if self.current.value == KEYWORDS.ASSIGN:
             self.advance()

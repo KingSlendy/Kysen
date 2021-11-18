@@ -122,6 +122,15 @@ class FunctionAccessNode(Node):
         return f"FUNC ACCESS: {self.node}({self.args})"
 
 
+class ClassAccessNode(FunctionAccessNode):
+    def __init__(self, node, args):
+        super().__init__(node, args)
+
+    
+    def __repr__(self):
+        return f"CLASS ACCESS: {self.node}({self.args})"
+
+
 class PropertyAccessNode(Node):
     def __init__(self, node, property):
         self.node = node

@@ -18,3 +18,6 @@ class IllegalCharError(Error):
 
 class SyntaxError(Error):
     pass
+
+class ArgumentError(Error):
+    pass
