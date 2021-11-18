@@ -386,7 +386,56 @@ class TestLanguage(unittest.TestCase):
         #"""), None)
 
 
-    def test_code(self):
+    def test_extensions(self):
+        self.assertEqual(language("""
+            class Operations(left, right) {
+                this.left = left;
+                this.right = right;
+
+                func Add() {
+                    return this.left + this.right;
+                }
+
+                func Subtract() {
+                    return this.left - this.right;
+                }
+            }
+
+            func Operations.Power() {
+                return this.left ** this.right;
+            }
+
+            op = Operations(3, 4);
+            op.Power();
+        """), 81)
+
+        self.assertEqual(language("""
+            class Test() {
+                this.value = 10;
+            }
+
+            func Test.Call() => this.value;
+            t = Test();
+            t.Call();
+        """), 10)
+
+        self.assertEqual(language("""
+            func String.Reverse() {
+                new_str = "";
+
+                for (char in this) {
+                    new_str = char + new_str;
+                }
+
+                return new_str;
+            }
+
+            a = "Hello";
+            a.Reverse();
+        """), "olleH")
+
+
+    def test_codes(self):
         self.assertEqual(language("""
             class Date() {
                 seconds = 0;
@@ -527,3 +576,34 @@ class TestLanguage(unittest.TestCase):
             t = Test2();
             t.Call();
         """), 3215)
+
+        self.assertEqual(language("""
+            class Vehicle(price) {
+                this.price = price;
+                func Sound() => "...";
+            }
+
+            class Car(price) : Vehicle(price) {
+                func Sound() => "Sound: VROOOM";
+            }
+
+            class Ferrari(name, price) : Car(price) {
+                this.name = name;
+                this.color = "Red";
+                this.country = "Europe";
+
+                func Info() =>
+                    base.Sound() + "\nName: " + String(this.name) + "\nPrice: " + String(this.price) + "\nColor: " + this.color + "\nCountry: " + this.country;
+            }
+
+            class Ferrari488() : Ferrari("Ferrari488", 284700) {
+                func Buy() => "You bought a car with this info:\n" + base.Info();
+            }
+
+            c = Ferrari488();
+            c.Buy();
+        """), "You bought a car with this info:\nSound: VROOOM\nName: Ferrari488\nPrice: 284700\nColor: Red\nCountry: Europe")
+
+
+    def test_errors(self):
+        pass

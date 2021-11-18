@@ -1,55 +1,37 @@
-#>
-class Operations(left, right) {
-    this.left = left;
-    this.right = right;
+class Vehicle(price) {
+    this.price = price;
 
-    func Add() {
-        return this.left + this.right;
-    }
-
-    func Subtract() {
-        return this.left - this.right;
+    func Sound() {
+        Console.Print("...");
     }
 }
 
-func Operations.Power() {
-    return this.left ** this.right;
-}
-
-op = Operations(10, 15);
-Console.Print(op.Add());
-Console.Print(op.Subtract());
-Console.Print(op.Power());
-<#
-
-#>
-class Test() {
-    this.value = 10;
-}
-
-func Test.Call() {
-    Console.Print("Hello World!");
-    Console.Print(this.value);
-}
-
-t = Test();
-t.Call();
-<#
-
-#>
-func String.Reverse() {
-    new_str = "";
-
-    for (char in this) {
-        new_str = char + new_str;
+class Car(price) : Vehicle(price) {
+    func Sound() {
+        Console.Print("VROOOM");
     }
-
-    return new_str;
 }
 
-a = "Hello";
-Console.Print(a.Reverse());
-<#
+class Ferrari(name, price) : Car(price) {
+    this.name = name;
+    this.color = "Red";
+    this.country = "Europe";
+
+    func Info() {
+        Console.Print("Name: " + String(this.name) + "\nPrice: " + String(this.price) + "\nColor: " + this.color + "\nCountry: " + this.country);
+    }
+}
+
+class Ferrari488() : Ferrari("Ferrari488", 284700) {
+    func Buy() {
+        Console.Print("You bought the Ferrari488!");
+    }
+}
+
+c = Ferrari488();
+c.Sound();
+c.Info();
+c.Buy();
 
 #>
 func Array.Filter(function) {
@@ -67,28 +49,6 @@ func Array.Filter(function) {
 a = [0, 0, 1, 2, 3, 0, 5, 11, 0, 0, 10];
 a = a.Filter(func(x) => (x != 0));
 Console.Print(a); # [1, 2, 3, 5, 11, 10]
-<#
-
-#>
-class Test() {
-    this.value = 10;
-
-    func Call() {
-        Console.Print(this.value);
-        Console.Print(this.value2);
-    }
-}
-
-class Test2() : Test {
-    base();
-    this.value = 100;
-    this.value2 = 1000;
-}
-
-t = Test2();
-t.Call(); # 100, 100
-t = Test();
-t.Call(); # 10, Error
 <#
 
 #>
