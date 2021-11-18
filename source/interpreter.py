@@ -191,7 +191,7 @@ class Interpreter:
                     
                     return value.copy()
 
-                return instance
+                return instance if instance != None else NULL_TYPE
 
             case n if isinstance(n, PropertyAccessNode):
                 identifier = self.visit(context, scope, n.node)

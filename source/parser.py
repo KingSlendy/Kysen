@@ -518,7 +518,7 @@ class Parser:
     def parse_binary_expression(self, priority = 0):
         left = self.parse_factor()
 
-        while (operator_priority := binary_operator_priority(self.current)) >= priority and operator_priority != -1:
+        while (operator_priority := binary_operator_priority(self.current)) > priority and operator_priority != -1:
             operator = self.current
             self.advance()
             right = self.parse_binary_expression(operator_priority)
@@ -537,7 +537,7 @@ class Parser:
 
             expressions.append(self.parse_binary_expression())
         
-            if self.peek(-1).type not in (TOKENS.SEMICOLON, TOKENS.RCURLY):
+            if self.peek(-1).type not in (TOKENS.SEMICOLON, TOKENS.RCURLY) and self.current.type != TOKENS.RPAREN:
                 self.necessary_token_advance(TOKENS.SEMICOLON)
 
             if once:

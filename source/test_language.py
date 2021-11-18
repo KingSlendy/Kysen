@@ -237,6 +237,7 @@ class TestLanguage(unittest.TestCase):
         self.assertEqual(language("10 ^ 5;"), 15)
         self.assertFalse(language("true && false;"))
         self.assertTrue(language("true || false;"))
+        self.assertEqual(language("40 / 10 / 2;"), 2)
         self.assertEqual(language("((2 ** 4 / 2 + 2) + 1 + 1 + 1 + 1 + 1 + 1 + 1 - (3 ** 3 / 9)) * (0.245 + 0.755) - ((-(10 ** 3 / 1000) + (3 * 25 / 5)) - 1);"), 1)
 
 
@@ -603,6 +604,13 @@ class TestLanguage(unittest.TestCase):
             c = Ferrari488();
             c.Buy();
         """), "You bought a car with this info:\nSound: VROOOM\nName: Ferrari488\nPrice: 284700\nColor: Red\nCountry: Europe")
+
+        self.assertEqual(language("""
+            func Test(function) =>
+                function(10, 5);
+
+            Test(func(a, b) => a + b);
+        """), 15)
 
 
     def test_errors(self):

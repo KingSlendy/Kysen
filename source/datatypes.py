@@ -501,6 +501,10 @@ class Attribute(DataType):
 
 
 class Null(DataType):
+    def __init__(self):
+        self.value = None
+
+
     def copy(self):
         return self
 
@@ -600,4 +604,4 @@ def BoolCache(v):
 
 NUMBER_TYPES = [Number(n) for n in range(-255, 256)]
 BOOL_TYPES = [Bool(False), Bool(True)]
-NULL_TYPE = Null(None)
+NULL_TYPE = Null()

@@ -1,37 +1,45 @@
-class Vehicle(price) {
-    this.price = price;
 
-    func Sound() {
-        Console.Print("...");
+# Fix operation order
+
+func Array.Filter(function) {
+    new_array = [];
+
+    for (n in this) {
+        if (function(n)) {
+            new_array.Append(n);
+        }
+    }
+
+    return new_array;
+}
+
+a = [0, 0, 1, 2, 3, 0, 0, 0, 4, 5, 0, 0, 0];
+Console.Print(a.Filter(func(x) => (x == 0)));
+
+#>
+class Day(seconds) {
+    this.Seconds = seconds;
+
+    this.Minutes => {
+        assign this.Seconds = value * 60;
+        access => this.Seconds / 60;
+    }
+
+    this.Hours => {
+        assign this.Seconds = value * 3600;
+        access => return this.Seconds / 3600;
+    }
+
+    this.Day => {
+        assign this.Seconds = value * 3600 * 24;
+        access => (this.Seconds / 3600) / 24;
     }
 }
 
-class Car(price) : Vehicle(price) {
-    func Sound() {
-        Console.Print("VROOOM");
-    }
-}
-
-class Ferrari(name, price) : Car(price) {
-    this.name = name;
-    this.color = "Red";
-    this.country = "Europe";
-
-    func Info() {
-        Console.Print("Name: " + String(this.name) + "\nPrice: " + String(this.price) + "\nColor: " + this.color + "\nCountry: " + this.country);
-    }
-}
-
-class Ferrari488() : Ferrari("Ferrari488", 284700) {
-    func Buy() {
-        Console.Print("You bought the Ferrari488!");
-    }
-}
-
-c = Ferrari488();
-c.Sound();
-c.Info();
-c.Buy();
+d = Day(1482);
+d.Minutes = 100;
+Console.Print(d.Day);
+<#
 
 #>
 func Array.Filter(function) {

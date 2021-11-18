@@ -25,7 +25,7 @@ class Runtime:
         #arrows[pos.end] = "^"
 
         #for i in range(pos.start, pos.end + 1):
-            #arrows[i] = "^"
+        #    arrows[i] = "^"
 
         arrows = "".join(arrows)
         raise RuntimeException(f"Stacktrace (most recent call last):\n{stacktrace}    {arrows}\n{error}")
