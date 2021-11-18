@@ -1,7 +1,10 @@
+import sys
 from builtin import builtin_add_all
 from datatypes import *
 from nodes import *
 from scope import Scope
+
+this = sys.modules[__name__]
 
 global_scope = Scope()
 builtin_add_all(global_scope)
@@ -20,20 +23,20 @@ class Interpreter:
         global last_scope
 
         match node:
-            case n if isinstance(n, ExpressionsNode):
+            case n if type(n) == ExpressionsNode:
                 results = []
 
                 for e in n.expressions:
                     value = self.visit(context, scope, e)
 
-                    if isinstance(value, (ReturnNode, ContinueNode, BreakNode)):
+                    if type(value) in (ReturnNode, ContinueNode, BreakNode):
                         return value
 
                     results.append(value)
 
                 return results
 
-            case n if isinstance(n, VarAssignNode):
+            case n if type(n) == VarAssignNode:
                 old_scope = scope
 
                 if last_scope != None:
@@ -48,7 +51,7 @@ class Interpreter:
                 if n.name in scope:
                     attribute = scope.access(n.name)
 
-                    if isinstance(attribute, Attribute):
+                    if type(attribute) == Attribute:
                         last_value = None
 
                         if "value" in scope:
@@ -66,21 +69,21 @@ class Interpreter:
 
                 return scope.assign(n.name, value)
 
-            case n if isinstance(n, VarAccessNode):
+            case n if type(n) == VarAccessNode:
                 value = scope.access(n.name)
 
-                if isinstance(value, Attribute):
+                if type(value) == Attribute:
                     attribute = value
                     value = self.visit(context, scope, attribute.access_expressions)
 
-                    if not isinstance(value, ReturnNode):
+                    if type(value) != ReturnNode:
                         raise Exception("There's no return inside attribute access.")
                     
                     value = self.visit(context, scope, value.expression)
 
                 return value
 
-            case n if isinstance(n, AccessorNode):
+            case n if type(n) == AccessorNode:
                 context = None
                 identifier = self.visit(context, scope, n.node)
 
@@ -94,14 +97,14 @@ class Interpreter:
                 index_expression = self.visit(context, scope, n.index_expression)
                 return identifier[index_expression]
 
-            case n if isinstance(n, AssignerNode):
+            case n if type(n) == AssignerNode:
                 identifier = self.visit(context, scope, n.node)
                 index_expression = self.visit(context, scope, n.index_expression)
                 value_expression = self.visit(context, scope, n.value_expression)
                 identifier[index_expression] = value_expression
                 return identifier[index_expression]
 
-            case n if isinstance(n, (FunctionAccessNode)):
+            case n if type(n) in (FunctionAccessNode, ClassAccessNode):
                 identifier = self.visit(context, scope, n.node)
                 context = None
                 old_scope = scope
@@ -116,14 +119,14 @@ class Interpreter:
                 if type(n) == ClassAccessNode and type(identifier) == Function:
                     raise Exception("Function type objects cannot be instantiated.")
 
-                if not isinstance(identifier, (Function, Class)):
+                if type(identifier) not in (Function, Class):
                     raise Exception(f"Cannot instantiate or call a value of type '{type(identifier).__name__}'.")
 
-                if isinstance(identifier, Class) and identifier.static:
+                if type(identifier) == Class and identifier.static:
                     raise Exception(f"Cannot instance the static class '{identifier.name}'.")
 
-                args = [x for x in identifier.args if isinstance(x, ArgumentNode)]
-                kw_args = [x for x in identifier.args if isinstance(x, KeywordArgumentNode)]
+                args = [x for x in identifier.args if type(x) == ArgumentNode]
+                kw_args = [x for x in identifier.args if type(x) == KeywordArgumentNode]
                 passed_args = n.args
                 arg_number = len(args) + len(kw_args)
                 passed_arg_number = len(passed_args)
@@ -133,7 +136,7 @@ class Interpreter:
                 elif passed_arg_number > arg_number:
                     raise Exception(f"Expected {arg_number} total argument(s), got {passed_arg_number}.")
 
-                if isinstance(identifier, Class):
+                if type(identifier) == Class:
                     scope = scope.copy()
                     instance = Instance(scope, identifier.name, identifier)
                 else:
@@ -143,7 +146,7 @@ class Interpreter:
                 for i, arg in enumerate(args):
                     parg = passed_args[i]
 
-                    if isinstance(parg, KeywordArgumentNode):
+                    if type(parg) == KeywordArgumentNode:
                         raise Exception(f"Expected positional argument: '{arg.expression.name}'.")
 
                     scope.assign(arg.expression.name, self.visit(context, old_scope, parg.expression))
@@ -154,10 +157,10 @@ class Interpreter:
                 for i, pkw_arg in enumerate(passed_args):
                     kw_arg = kw_args[i]
 
-                    if isinstance(pkw_arg, ArgumentNode):
+                    if type(pkw_arg) == ArgumentNode:
                         scope.assign(kw_arg.name, self.visit(context, old_scope, pkw_arg.expression))
                         declared_kw_arguments.append(kw_arg.name)
-                    elif isinstance(pkw_arg, KeywordArgumentNode):
+                    elif type(pkw_arg) == KeywordArgumentNode:
                         if pkw_arg.name in declared_kw_arguments:
                             raise Exception(f"Already declared argument: {pkw_arg.name}")
 
@@ -176,7 +179,7 @@ class Interpreter:
                             if k != "this":
                                 value = v.copy()
 
-                                if isinstance(v, (Function, Class)):
+                                if type(v) in (Function, Class):
                                     value.scope = scope.copy()
 
                                 scope.assign(k, value)
@@ -186,8 +189,8 @@ class Interpreter:
                 # Visit all the Function/Class expressions.
                 value = self.visit(context, scope, identifier.expressions)
 
-                if isinstance(value, ReturnNode):
-                    if value.expression != None and not isinstance(value.expression, DataType):
+                if type(value) == ReturnNode:
+                    if value.expression != None and type(value.expression) != DataType:
                         value = self.visit(context, scope, value.expression)
                     else:
                         value = value.expression
@@ -199,45 +202,45 @@ class Interpreter:
 
                 return instance if instance != None else NULL_TYPE
 
-            case n if isinstance(n, PropertyAccessNode):
+            case n if type(n) == PropertyAccessNode:
                 identifier = self.visit(context, scope, n.node)
 
-                if not isinstance(identifier, (String, Array, Class, Instance)):
+                if type(identifier) not in (String, Array, Class, Instance):
                     raise Exception(f"Cannot check for properties in variable of type '{type(identifier).__name__}'.")
 
-                if isinstance(identifier, (String, Array)):
+                if type(identifier) in (String, Array):
                     identifier.name = type(identifier).__name__
 
-                if isinstance(n.property, VarAssignNode):
+                if type(n.property) == VarAssignNode:
                     if scope != identifier.scope and not n.property.name in identifier.scope:
                         raise Exception(f"Cannot assign uninitialized property '{n.property.name}' for '{identifier.name}': '{n.node.name}'.")
 
                 check_property = n.property
 
-                while not isinstance(check_property, (VarAssignNode, VarAccessNode, AttributeNode)):
+                while type(check_property) not in (VarAssignNode, VarAccessNode, AttributeNode):
                     check_property = check_property.node
 
-                if (n.node.name != "this" or isinstance(check_property, VarAccessNode)) and check_property.name not in identifier.scope:
-                    raise Exception(f"{'Instance of type ' if isinstance(identifier, Instance) else 'Class '}'{identifier.name}' has no property '{check_property.name}'.")
+                if (n.node.name != "this" or type(check_property) == VarAccessNode) and check_property.name not in identifier.scope:
+                    raise Exception(f"{'Instance of type ' if type(identifier) == Instance else 'Class '}'{identifier.name}' has no property '{check_property.name}'.")
 
                 if last_scope == None:
                     last_scope = scope
 
-                value = self.visit({"name": identifier.name, "instance": isinstance(identifier, Instance)}, identifier.scope, n.property)
+                value = self.visit({"name": identifier.name, "instance": type(identifier) == Instance}, identifier.scope, n.property)
                 return value
 
-            case n if issubclass(type(n), DataTypeNode):
+            case n if isinstance(n, DataTypeNode):
                 match n:
-                    case _ if isinstance(n, StringNode):
+                    case _ if type(n) == StringNode:
                         return String(scope.copy(), n.value)
 
-                    case _ if isinstance(n, ArrayNode):
+                    case _ if type(n) == ArrayNode:
                         for i, v in enumerate(n.value):
                             n.value[i] = self.visit(context, scope, v)
 
                         return Array(scope.copy(), n.value)
 
-                    case _ if isinstance(n, (FunctionNode, ClassNode)):
+                    case _ if type(n) in (FunctionNode, ClassNode):
                         object = None
 
                         if type(n) == FunctionNode:
@@ -264,7 +267,7 @@ class Interpreter:
                             statics = []
 
                             for i, e in enumerate(n.expressions):
-                                if isinstance(e, StaticNode):
+                                if type(e) == StaticNode:
                                     self.visit(context, object.scope, e.node)
                                     statics.append(i)
 
@@ -279,10 +282,10 @@ class Interpreter:
                         else:
                             return object
 
-                    case _ if isinstance(n, NullNode):
+                    case _ if type(n) == NullNode:
                         return NULL_TYPE
 
-                    case _ if isinstance(n, AttributeNode):
+                    case _ if type(n) == AttributeNode:
                         value = Attribute(scope, n.assign_expressions, n.access_expressions)
                         return scope.assign(n.name, value)
 
@@ -298,17 +301,17 @@ class Interpreter:
             case n if isinstance(n, UnaryOperationNode):
                 right = self.visit(context, scope, n.right)
 
-                match type(n):
-                    case _ if isinstance(n, PositiveNode):
+                match n:
+                    case _ if type(n) == PositiveNode:
                         return right
 
-                    case _ if isinstance(n, NegativeNode):
+                    case _ if type(n) == NegativeNode:
                         return -right
 
-                    case _ if isinstance(n, NotNode):
+                    case _ if type(n) == NotNode:
                         return BoolCache(not right.value)
 
-                    case _ if isinstance(n, BitNotNode):
+                    case _ if type(n) == BitNotNode:
                         return ~right
 
             case n if isinstance(n, BinaryOperationNode):
@@ -320,70 +323,70 @@ class Interpreter:
                 right = self.visit(context, scope, n.right)
 
                 match n:
-                    case _ if isinstance(n, PoweringNode):
+                    case _ if type(n) == PoweringNode:
                         return left ** right
 
-                    case _ if isinstance(n, MultiplicationNode):
+                    case _ if type(n) == MultiplicationNode:
                         return left * right
                     
-                    case _ if isinstance(n, DivitionNode):
+                    case _ if type(n) == DivitionNode:
                         return left / right
 
-                    case _ if isinstance(n, ModNode):
+                    case _ if type(n) == ModNode:
                         return left % right
 
-                    case _ if isinstance(n, AdditionNode):
+                    case _ if type(n) == AdditionNode:
                         return left + right
 
-                    case _ if isinstance(n, SubtractionNode):
+                    case _ if type(n) == SubtractionNode:
                         return left - right
 
-                    case _ if isinstance(n, LShiftNode):
+                    case _ if type(n) == LShiftNode:
                         return left << right
 
-                    case _ if isinstance(n, RShiftNode):
+                    case _ if type(n) == RShiftNode:
                         return left >> right
 
-                    case _ if isinstance(n, LessThanNode):
+                    case _ if type(n) == LessThanNode:
                         return left < right
 
-                    case _ if isinstance(n, LessEqualsNode):
+                    case _ if type(n) == LessEqualsNode:
                         return left <= right
 
-                    case _ if isinstance(n, GreaterThanNode):
+                    case _ if type(n) == GreaterThanNode:
                         return left > right
 
-                    case _ if isinstance(n, GreaterEqualsNode):
+                    case _ if type(n) == GreaterEqualsNode:
                         return left >= right
 
-                    case _ if isinstance(n, EqualsEqualsNode):
+                    case _ if type(n) == EqualsEqualsNode:
                         return left == right
 
-                    case _ if isinstance(n, NotEqualsNode):
+                    case _ if type(n) == NotEqualsNode:
                         return left != right
 
-                    case _ if isinstance(n, BitAndNode):
+                    case _ if type(n) == BitAndNode:
                         return left & right
 
-                    case _ if isinstance(n, BitOrNode):
+                    case _ if type(n) == BitOrNode:
                         return left | right
 
-                    case _ if isinstance(n, BitXorNode):
+                    case _ if type(n) == BitXorNode:
                         return left ^ right
 
-                    case _ if isinstance(n, AndNode):
-                        if (isinstance(left, Bool) and left.value) and (isinstance(right, Bool) and right.value):
+                    case _ if type(n) == AndNode:
+                        if (type(left) == Bool and left.value) and (type(right) == Bool and right.value):
                             return BoolCache(True)
 
                         return BoolCache(False)
 
-                    case _ if isinstance(n, OrNode):
-                        if (isinstance(left, Bool) and left.value) or (isinstance(right, Bool) and right.value):
+                    case _ if type(n) == OrNode:
+                        if (type(left) == Bool and left.value) or (type(right) == Bool and right.value):
                             return BoolCache(True)
 
                         return BoolCache(False)
 
-            case n if isinstance(n, IfNode):
+            case n if type(n) == IfNode:
                 for c, e in n.if_clauses:
                     condition = self.visit(context, scope, c)
 
@@ -393,7 +396,7 @@ class Interpreter:
                     if n.else_expressions != None:
                         return self.visit(context, scope, n.else_expressions)
 
-            case n if isinstance(n, ForNode):
+            case n if type(n) == ForNode:
                 iterable = self.visit(context, scope, n.iterable)
 
                 for x in iterable:
@@ -403,14 +406,17 @@ class Interpreter:
                     scope.assign(n.identifier, x)
                     value = self.visit(context, scope, n.expressions)
 
-                    if isinstance(value, ReturnNode):
-                        return value
-                    elif isinstance(value, ContinueNode):
-                        continue
-                    elif isinstance(value, BreakNode):
-                        break
+                    match value:
+                        case _ if type(value) == ReturnNode:
+                            return value
 
-            case n if isinstance(n, WhileNode):
+                        case _ if type(value) == ContinueNode:
+                            continue
+
+                        case _ if type(value) == BreakNode:
+                            break
+
+            case n if type(n) == WhileNode:
                 while True:
                     condition = self.visit(context, scope, n.condition)
 
@@ -419,30 +425,33 @@ class Interpreter:
 
                     value = self.visit(context, scope, n.expressions)
 
-                    if isinstance(value, ReturnNode):
-                        return value
-                    elif isinstance(value, ContinueNode):
-                        continue
-                    elif isinstance(value, BreakNode):
-                        break
+                    match value:
+                        case _ if type(value) == ReturnNode:
+                            return value
 
-            case n if isinstance(n, (ReturnNode, ContinueNode, BreakNode, DataType)):
+                        case _ if type(value) == ContinueNode:
+                            continue
+
+                        case _ if type(value) == BreakNode:
+                            break
+
+            case n if type(n) in (ReturnNode, ContinueNode, BreakNode) or isinstance(n, DataType):
                 return n
 
-            case n if isinstance(n, StaticNode):
-                if not isinstance(n.node, ClassNode):
+            case n if type(n) == StaticNode:
+                if type(n.node) != ClassNode:
                     raise Exception("Cannot use 'static' outside of a class definition.")
                 
                 node = self.visit(context, scope, n.node)
                 scope.access(n.node.name).static = True
 
                 for e in n.node.expressions:
-                    if not isinstance(e, StaticNode):
+                    if type(e) != StaticNode:
                         raise Exception("Static classes can't have non-static properties.")
 
                 return node
 
-            case n if isinstance(n, (BuiltInFunctionNode, BuiltInClassNode)):
+            case n if type(n) in (BuiltInFunctionNode, BuiltInClassNode):
                 return ReturnNode(n.expressions(self, scope))
 
             case n:
