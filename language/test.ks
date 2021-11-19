@@ -1,14 +1,5 @@
 
-func Add2() {
-    return 1 + true;
-}
 
-func Add() {
-    a = "";
-    return Add2();
-}
-
-Add();
 
 #>
 for (i in [0, 1, 2, 3]) {

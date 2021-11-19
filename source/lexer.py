@@ -1,5 +1,5 @@
 import string
-from errors import *
+from exceptions import *
 from runtime import Position
 from tokens import *
 

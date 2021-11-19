@@ -26,8 +26,16 @@ class KSArgumentException(KSException):
 
 class KSBinaryOperationException(KSException):
     def __init__(self, operator, type_left, type_right):
-        self.message = f"unsupported operator '{operator}' for types {type_left.__name__} and {type_right.__name__}."
+        self.message = f"unsupported operator '{operator}' for types '{type_left.__name__}' and '{type_right.__name__}'."
 
 
 class KSTypeException(KSException):
+    pass
+
+
+class KSValueException(KSException):
+    pass
+
+
+class KSPropertyException(KSException):
     pass

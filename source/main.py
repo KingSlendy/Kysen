@@ -1,5 +1,5 @@
 import os, sys
-from errors import RuntimeException
+from exceptions import RuntimeException
 from runner import Runner
 
 def run(filename, text):

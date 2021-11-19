@@ -2,12 +2,12 @@ from enum import Enum
 from runtime import Position
 
 class TOKENS(Enum):
-    IDENTIFIER = "IDENTIFIER"
-    KEYWORD = "KEYWORD"
-    INT = "INT"
-    FLOAT = "FLOAT"
-    BOOL = "BOOL"
-    STRING = "STRING"
+    IDENTIFIER = "identifier"
+    KEYWORD = "keyword"
+    INT = "int"
+    FLOAT = "float"
+    BOOL = "bool"
+    STRING = "string"
     NOT = "!"
     BITNOT = "~"
     POW = "**"
@@ -43,8 +43,8 @@ class TOKENS(Enum):
     DOTDOT = ":"
     ARROW = "=>"
     SEMICOLON = ";"
-    WHITESPACE = "WHITESPACE"
-    ENDOFFILE = "ENDOFFILE"
+    WHITESPACE = "whitespace"
+    ENDOFFILE = "endoffile"
 
 
 class KEYWORDS(Enum):

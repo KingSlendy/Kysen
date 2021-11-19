@@ -1,6 +1,6 @@
 from builtin import builtin_add_all
 from datatypes import *
-from errors import *
+from exceptions import *
 from nodes import *
 from scope import Scope
 
@@ -112,13 +112,13 @@ class Interpreter:
                     last_scope = None
 
                 if type(n) == FunctionAccessNode and type(identifier) != Function:
-                    self.runtime.report(KSTypeException(f"{type(identifier).__name__} type is not callable."), identifier.pos)
+                    self.runtime.report(KSTypeException(f"'{type(identifier).__name__}' type is not callable."), n.pos)
 
                 if type(n) == ClassAccessNode and type(identifier) != Class:
-                    self.runtime.report(KSTypeException(f"{type(identifier).__name__} type cannot be instantiated."), identifier.pos)
+                    self.runtime.report(KSTypeException(f"'{type(identifier).__name__}' type cannot be instantiated."), n.pos)
 
                 if type(identifier) == Class and identifier.static:
-                    raise Exception(f"Cannot instance the static class '{identifier.name}'.")
+                    self.runtime.report(KSTypeException(f"cannot instantiate static class '{identifier.name}'."), n.pos)
 
                 args = [x for x in identifier.args if type(x) == ArgumentNode]
                 kw_args = [x for x in identifier.args if type(x) == KeywordArgumentNode]
@@ -127,9 +127,9 @@ class Interpreter:
                 passed_arg_number = len(passed_args)
 
                 if passed_arg_number < len(args):
-                    raise Exception(f"Expected {len(args)} positional argument(s), got {passed_arg_number}.")
+                    self.runtime.report(KSArgumentException(f"expected '{len(args)}' positional argument(s), got '{passed_arg_number}'."), n.pos)
                 elif passed_arg_number > arg_number:
-                    raise Exception(f"Expected {arg_number} total argument(s), got {passed_arg_number}.")
+                    self.runtime.report(KSArgumentException(f"expected '{arg_number}' total argument(s), got '{passed_arg_number}'."), n.pos)
 
                 if type(identifier) == Class:
                     scope = scope.copy()
@@ -142,7 +142,7 @@ class Interpreter:
                     parg = passed_args[i]
 
                     if type(parg) == KeywordArgumentNode:
-                        raise Exception(f"Expected positional argument: '{arg.expression.name}'.")
+                        self.runtime.report(KSArgumentException(f"expected positional argument '{arg.expression.name}'."), n.pos)
 
                     scope.assign(arg.expression.name, self.visit(context, old_scope, parg.expression))
 
@@ -157,7 +157,7 @@ class Interpreter:
                         declared_kw_arguments.append(kw_arg.name)
                     elif type(pkw_arg) == KeywordArgumentNode:
                         if pkw_arg.name in declared_kw_arguments:
-                            raise Exception(f"Already declared argument: {pkw_arg.name}")
+                            self.runtime.report(KSArgumentException(f"already declared argument '{pkw_arg.name}'."), n.pos)
 
                         scope.assign(pkw_arg.name, self.visit(context, old_scope, pkw_arg.expression))
                         declared_kw_arguments.append(pkw_arg.name)
@@ -199,21 +199,21 @@ class Interpreter:
                     
                     return value.copy()
 
-                self.runtime.pop()
+                self.runtime.place = self.runtime.pop()
                 return instance if instance != None else NULL_TYPE
 
             case n if type(n) == PropertyAccessNode:
                 identifier = self.visit(context, scope, n.node)
 
-                if type(identifier) not in (String, Array, Class, Instance):
-                    raise Exception(f"Cannot check for properties in variable of type '{type(identifier).__name__}'.")
+                #if type(identifier) not in (String, Array, Class, Instance):
+                    #raise Exception(f"Cannot check for properties in variable of type '{type(identifier).__name__}'.")
 
                 if type(identifier) in (String, Array):
                     identifier.name = type(identifier).__name__
 
                 if type(n.property) == VarAssignNode:
                     if scope != identifier.scope and not n.property.name in identifier.scope:
-                        raise Exception(f"Cannot assign uninitialized property '{n.property.name}' for '{identifier.name}': '{n.node.name}'.")
+                        self.runtime.report(KSPropertyException(f"cannot assign uninitialized property '{n.property.name}' in '{identifier.name}'."), n.pos)
 
                 check_property = n.property
 

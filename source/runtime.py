@@ -1,4 +1,4 @@
-from errors import RuntimeException
+from exceptions import RuntimeException
 
 class Runtime:
     def __init__(self, filename, text, unittest = False):
@@ -14,13 +14,13 @@ class Runtime:
 
 
     def pop(self):
-        self.stacktrace.pop()
+        return self.stacktrace.pop()[0]
 
     
     def report(self, error, pos, syntax = False):
         #[pos.start:pos.end]
         self.stacktrace += [(self.place, pos)]
-        stacktrace = "\n".join([f"  File {self.filename}, {c} at line {p.line}\n    {self.text[p.line - 1].strip()}\n" for c, p in self.stacktrace])
+        stacktrace = "\n".join([f"  File {self.filename}, in {c} at line {p.line}\n    {self.text[p.line - 1].strip()}\n" for c, p in self.stacktrace])
         arrows = ""
 
         if syntax:

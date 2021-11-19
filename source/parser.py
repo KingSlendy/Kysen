@@ -1,4 +1,4 @@
-from errors import *
+from exceptions import *
 from nodes import *
 from runtime import Position
 from tokens import KEYWORDS, TOKENS
@@ -111,13 +111,9 @@ class Parser:
 
 
     def necessary_token_advance(self, type):
-        if self.current.type != type:
-            pos = self.peek(-1).pos
-            pos.start = pos.end + 1
-            pos.end = pos.start
-            self.runtime.report(KSSyntaxException(f"expected '{type.value}'."), pos, syntax = True)
-
+        token = self.necessary_token_check(type)
         self.advance()
+        return token
 
     
     def necessary_keyword_advance(self, keyword):
@@ -128,6 +124,16 @@ class Parser:
             self.runtime.report(KSSyntaxException(f"expected '{keyword.value}'."), pos, syntax = True)
 
         self.advance()
+
+    
+    def necessary_token_check(self, type):
+        if self.current.type != type:
+            pos = self.peek(-1).pos
+            pos.start = pos.end + 1
+            pos.end = pos.start
+            self.runtime.report(KSSyntaxException(f"expected '{type.value}'."), pos, syntax = True)
+        else:
+            return self.current
 
 
     def ignore_token_advance(self, type):
@@ -221,6 +227,7 @@ class Parser:
                     case KEYWORDS.NEW:
                         token = self.current
                         self.advance()
+                        self.necessary_token_check(TOKENS.IDENTIFIER)
                         factor = self.parse_factor()
                         return ClassAccessNode(factor.node, factor.args).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
 
@@ -229,22 +236,12 @@ class Parser:
 
             case TOKENS.IDENTIFIER:
                 token = self.current
-                name = token.value
-                self.advance()
-
-                if self.current.type == TOKENS.FLOAT:
-                    self.runtime.report(KSSyntaxException("expected identifier."), self.current.pos, syntax = True)
-
+                name = self.necessary_token_advance(TOKENS.IDENTIFIER).value
                 node = VarAccessNode(name).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
                 #typed = None
 
                 #if self.current.type == TOKENS.DOTDOT:
-                #    self.advance()
-
-                #    if self.current.type != TOKENS.IDENTIFIER:
-                #        self.runtime.report(KSSyntaxException("expected identifier."), self.current.pos)
-
-                #    typed = self.current.value
+                #    typed = self.necessary_token_advance(TOKENS.IDENTIFIER).value
 
                 match self.current.type:
                     case TOKENS.ASSIGNMENT:
@@ -326,10 +323,8 @@ class Parser:
             self.runtime.report(KSSyntaxException("expected '('."), self.current.pos, syntax = True)
 
         while self.current.type == TOKENS.LPAREN:
-            self.advance()
             args.append([])
             self.parse_arguments(args[index], detect_optional = False)
-            self.necessary_token_advance(TOKENS.RPAREN)
             index += 1
 
         for a in args:
@@ -350,10 +345,7 @@ class Parser:
 
         while self.current.type == TOKENS.DOT:
             self.advance()
-
-            if self.current.type != TOKENS.IDENTIFIER:
-                self.runtime.report(KSSyntaxException("expected identifier."), self.current.pos, syntax = True)
-
+            self.necessary_token_check(TOKENS.IDENTIFIER)
             accessors.append(self.parse_factor())
 
         for a in accessors:
@@ -460,44 +452,27 @@ class Parser:
 
         if self.current.type == TOKENS.DOT:
             self.advance()
-
-            if self.current.type != TOKENS.IDENTIFIER:
-                self.runtime.report(KSSyntaxException("expected identifier."), self.current.pos, syntax = True)
-
             bound_name = name
-            name = self.current.value
-            self.advance()
+            name = self.necessary_token_advance(TOKENS.IDENTIFIER).value
 
-        self.necessary_token_advance(TOKENS.LPAREN)
         args = []
         self.parse_arguments(args)
-        (_, expressions) = self.parse_statement(has_condition = False)
+        (_, expressions) = self.parse_statement(first_advance = False, has_condition = False)
         return FunctionNode(name, args, expressions, bound_name).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
 
     
     def parse_class_statement(self):
         token = self.current
         self.advance()
-
-        if self.current.type != TOKENS.IDENTIFIER:
-            self.runtime.report(KSSyntaxException("expected identifier."), self.current.pos, syntax = True)
-            
-        name = self.current.value
-        self.advance()
-        self.necessary_token_advance(TOKENS.LPAREN)
+        name = self.necessary_token_advance(TOKENS.IDENTIFIER).value
         args = []
         self.parse_arguments(args)
-        self.necessary_token_advance(TOKENS.RPAREN)
         inherit = None
 
         if self.current.type == TOKENS.DOTDOT:
             self.advance()
-
-            if self.current.type != TOKENS.IDENTIFIER:
-                self.runtime.report(KSSyntaxException("expected identifier."), self.current.pos, syntax = True)
-
-            node = VarAccessNode(self.current.value).set_pos(self.current.pos)
-            self.advance()
+            inherit_name = self.necessary_token_advance(TOKENS.IDENTIFIER)
+            node = VarAccessNode(inherit_name.value).set_pos(self.current.pos)
             inherit = self.parse_function_access(node)
             inherit = ClassAccessNode(inherit.node, inherit.args).set_pos(inherit.pos)
 
@@ -506,6 +481,7 @@ class Parser:
 
 
     def parse_arguments(self, args, detect_optional = True):
+        self.necessary_token_advance(TOKENS.LPAREN)
         has_optional = False
 
         while True:
@@ -530,6 +506,8 @@ class Parser:
 
             if self.current.type == TOKENS.COMMA:
                 self.advance()
+
+        self.necessary_token_advance(TOKENS.RPAREN)
 
 
     def parse_attribute_expression(self, node):
