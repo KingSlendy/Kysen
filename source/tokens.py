@@ -13,6 +13,7 @@ class TOKENS(Enum):
     POW = "**"
     MULT = "*"
     DIV = "/"
+    FDIV = "\\"
     MOD = "%"
     ADD = "+"
     SUBT = "-"

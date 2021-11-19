@@ -1,10 +1,8 @@
-import sys
 from builtin import builtin_add_all
 from datatypes import *
+from errors import *
 from nodes import *
 from scope import Scope
-
-this = sys.modules[__name__]
 
 global_scope = Scope()
 builtin_add_all(global_scope)
@@ -19,7 +17,7 @@ class Interpreter:
         self.run()
 
     
-    def visit(self, context, scope, node):
+    def visit(self, context, scope, node) -> Node:
         global last_scope
 
         match node:
@@ -46,7 +44,7 @@ class Interpreter:
                 value = self.visit(context, old_scope, n.expression)
 
                 if not issubclass(type(value), DataType):
-                    raise Exception(f"Cannot assign a non-type value to variable '{n.name}'.")
+                    raise Exception(f"Cannot assign a non-Type value to variable '{n.name}'.")
 
                 if n.name in scope:
                     attribute = scope.access(n.name)
@@ -113,14 +111,11 @@ class Interpreter:
                     old_scope = last_scope
                     last_scope = None
 
-                if type(n) == FunctionAccessNode and type(identifier) == Class:
-                    raise Exception("Class type objects are not callable.")
+                if type(n) == FunctionAccessNode and type(identifier) != Function:
+                    self.runtime.report(KSTypeException(f"{type(identifier).__name__} type is not callable."), identifier.pos)
 
-                if type(n) == ClassAccessNode and type(identifier) == Function:
-                    raise Exception("Function type objects cannot be instantiated.")
-
-                if type(identifier) not in (Function, Class):
-                    raise Exception(f"Cannot instantiate or call a value of type '{type(identifier).__name__}'.")
+                if type(n) == ClassAccessNode and type(identifier) != Class:
+                    self.runtime.report(KSTypeException(f"{type(identifier).__name__} type cannot be instantiated."), identifier.pos)
 
                 if type(identifier) == Class and identifier.static:
                     raise Exception(f"Cannot instance the static class '{identifier.name}'.")
@@ -186,6 +181,10 @@ class Interpreter:
 
                         scope.assign("base", base)
 
+
+                self.runtime.push(self.runtime.place, n.pos)
+                self.runtime.place = identifier.name
+
                 # Visit all the Function/Class expressions.
                 value = self.visit(context, scope, identifier.expressions)
 
@@ -200,6 +199,7 @@ class Interpreter:
                     
                     return value.copy()
 
+                self.runtime.pop()
                 return instance if instance != None else NULL_TYPE
 
             case n if type(n) == PropertyAccessNode:
@@ -232,13 +232,13 @@ class Interpreter:
             case n if isinstance(n, DataTypeNode):
                 match n:
                     case _ if type(n) == StringNode:
-                        return String(scope.copy(), n.value)
+                        return String(scope.copy(), n.value).set_pos(n.pos)
 
                     case _ if type(n) == ArrayNode:
                         for i, v in enumerate(n.value):
                             n.value[i] = self.visit(context, scope, v)
 
-                        return Array(scope.copy(), n.value)
+                        return Array(scope.copy(), n.value).set_pos(n.pos)
 
                     case _ if type(n) in (FunctionNode, ClassNode):
                         object = None
@@ -258,12 +258,12 @@ class Interpreter:
 
                                 n.bound = None
                             else:
-                                object = Function(scope, n.name, n.args, n.expressions)
+                                object = Function(scope, n.name, n.args, n.expressions).set_pos(n.pos)
                         elif type(n) == ClassNode:
                             if n.inherit != None:
                                 scope.access(n.inherit.node.name)
 
-                            object = Class(scope.copy(), n.name, n.args, n.expressions, n.inherit)
+                            object = Class(scope.copy(), n.name, n.args, n.expressions, n.inherit).set_pos(n.pos)
                             statics = []
 
                             for i, e in enumerate(n.expressions):
@@ -286,7 +286,7 @@ class Interpreter:
                         return NULL_TYPE
 
                     case _ if type(n) == AttributeNode:
-                        value = Attribute(scope, n.assign_expressions, n.access_expressions)
+                        value = Attribute(scope, n.assign_expressions, n.access_expressions).set_pos(n.pos)
                         return scope.assign(n.name, value)
 
                     case _:
@@ -295,7 +295,7 @@ class Interpreter:
                             BoolNode: BoolCache
                         }[type(n)]
 
-                        return cast_type(n.value)
+                        return cast_type(n.value).set_pos(n.pos)
 
 
             case n if isinstance(n, UnaryOperationNode):
@@ -324,28 +324,58 @@ class Interpreter:
 
                 match n:
                     case _ if type(n) == PoweringNode:
-                        return left ** right
+                        try:
+                            return left ** right
+                        except:
+                            self.runtime.report(KSBinaryOperationException("**", type(left), type(right)), n.pos)
 
                     case _ if type(n) == MultiplicationNode:
-                        return left * right
+                        try:
+                            return left * right
+                        except:
+                            self.runtime.report(KSBinaryOperationException("*", type(left), type(right)), n.pos)
                     
                     case _ if type(n) == DivitionNode:
-                        return left / right
+                        try:
+                            return left / right
+                        except:
+                            self.runtime.report(KSBinaryOperationException("/", type(left), type(right)), n.pos)
+
+                    case _ if type(n) == FlooringDivitionNode:
+                        try:
+                            return left // right
+                        except:
+                            self.runtime.report(KSBinaryOperationException("\\", type(left), type(right)), n.pos)
 
                     case _ if type(n) == ModNode:
-                        return left % right
+                        try:
+                            return left % right
+                        except:
+                            self.runtime.report(KSBinaryOperationException("%", type(left), type(right)), n.pos)
 
                     case _ if type(n) == AdditionNode:
-                        return left + right
+                        try:
+                            return left + right
+                        except:
+                            self.runtime.report(KSBinaryOperationException("+", type(left), type(right)), n.pos)
 
                     case _ if type(n) == SubtractionNode:
-                        return left - right
+                        try:
+                            return left - right
+                        except:
+                            self.runtime.report(KSBinaryOperationException("-", type(left), type(right)), n.pos)
 
                     case _ if type(n) == LShiftNode:
-                        return left << right
+                        try:
+                            return left << right
+                        except:
+                            self.runtime.report(KSBinaryOperationException("<<", type(left), type(right)), n.pos)
 
                     case _ if type(n) == RShiftNode:
-                        return left >> right
+                        try:
+                            return left >> right
+                        except:
+                            self.runtime.report(KSBinaryOperationException(">>", type(left), type(right)), n.pos)
 
                     case _ if type(n) == LessThanNode:
                         return left < right
@@ -366,13 +396,22 @@ class Interpreter:
                         return left != right
 
                     case _ if type(n) == BitAndNode:
-                        return left & right
+                        try:
+                            return left & right
+                        except:
+                            self.runtime.report(KSBinaryOperationException("&", type(left), type(right)), n.pos)
 
                     case _ if type(n) == BitOrNode:
-                        return left | right
+                        try:
+                            return left | right
+                        except:
+                            self.runtime.report(KSBinaryOperationException("|", type(left), type(right)), n.pos)
 
                     case _ if type(n) == BitXorNode:
-                        return left ^ right
+                        try:
+                            return left ^ right
+                        except:
+                            self.runtime.report(KSBinaryOperationException("^", type(left), type(right)), n.pos)
 
                     case _ if type(n) == AndNode:
                         if (type(left) == Bool and left.value) and (type(right) == Bool and right.value):
@@ -414,7 +453,11 @@ class Interpreter:
                             continue
 
                         case _ if type(value) == BreakNode:
-                            break
+                            if value.expression.value > 1:
+                                value.expression.value -= 1
+                                return value
+                            else:
+                                break
 
             case n if type(n) == WhileNode:
                 while True:
@@ -433,10 +476,23 @@ class Interpreter:
                             continue
 
                         case _ if type(value) == BreakNode:
-                            break
+                            if value.expression.value > 1:
+                                value.expression.value -= 1
+                                return value
+                            else:
+                                break
 
-            case n if type(n) in (ReturnNode, ContinueNode, BreakNode) or isinstance(n, DataType):
+            case n if type(n) in (ReturnNode, ContinueNode) or isinstance(n, DataType):
                 return n
+
+            case n if type(n) == BreakNode:
+                value = self.visit(context, scope, n.expression)
+
+                if type(value) != Number:
+                    raise Exception("Cannot use non-Number expressions on 'break' statement.")
+
+                value = Number(value.value)
+                return BreakNode(value).set_pos(n.pos)
 
             case n if type(n) == StaticNode:
                 if type(n.node) != ClassNode:
@@ -447,7 +503,7 @@ class Interpreter:
 
                 for e in n.node.expressions:
                     if type(e) != StaticNode:
-                        raise Exception("Static classes can't have non-static properties.")
+                        raise Exception("Static classes can't have non-Static properties.")
 
                 return node
 
@@ -467,5 +523,12 @@ class Interpreter:
 
         self.result = self.visit(None, global_scope, self.tree)
 
-        if type(self.result) == ReturnNode:
-            raise Exception("Cannot use 'return' keyword outside of statements.")
+        match self.result:
+            case r if type(r) == ReturnNode:
+                self.runtime.report(KSSyntaxException("cannot use 'return' statement outside of function context."), r.pos)
+
+            case r if type(r) == ContinueNode:
+                self.runtime.report(KSSyntaxException("cannot use 'continue' statement outside of loop context."), r.pos)
+
+            case r if type(r) == BreakNode:
+                self.runtime.report(KSSyntaxException("cannot use 'break' statement outside of loop context."), r.pos)

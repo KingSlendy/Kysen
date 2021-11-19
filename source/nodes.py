@@ -220,6 +220,11 @@ class DivitionNode(BinaryOperationNode):
         super().__init__(left, right, assignment)
 
 
+class FlooringDivitionNode(BinaryOperationNode):
+    def __init__(self, left, right, assignment = False):
+        super().__init__(left, right, assignment)
+
+
 class ModNode(BinaryOperationNode):
     def __init__(self, left, right, assignment = False):
         super().__init__(left, right, assignment)
@@ -336,9 +341,12 @@ class ContinueNode(Node):
         return f"CONTINUE"
 
 
-class BreakNode(Node):
+class BreakNode(ReturnNode):
+    def __init__(self, expression):
+        super().__init__(expression)
+
     def __repr__(self):
-        return f"BREAK"
+        return f"BREAK {self.expression}"
 
 
 class StaticNode(Node):
@@ -394,4 +402,3 @@ BOOL_NODES = [BoolNode(False), BoolNode(True)]
 NULL_NODE = NullNode()
 
 CONTINUE_NODE = ContinueNode()
-BREAK_NODE = BreakNode()

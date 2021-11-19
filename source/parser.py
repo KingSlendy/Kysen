@@ -1,5 +1,6 @@
 from errors import *
 from nodes import *
+from runtime import Position
 from tokens import KEYWORDS, TOKENS
 
 UNARY_OPERATOR_NODES = {
@@ -13,6 +14,7 @@ BINARY_OPERATOR_NODES = {
     TOKENS.POW: PoweringNode,
     TOKENS.MULT: MultiplicationNode,
     TOKENS.DIV: DivitionNode,
+    TOKENS.FDIV: FlooringDivitionNode,
     TOKENS.MOD: ModNode,
     TOKENS.ADD: AdditionNode,
     TOKENS.SUBT: SubtractionNode,
@@ -36,7 +38,7 @@ def binary_operator_priority(token):
         case TOKENS.POW:
             return 11
 
-        case TOKENS.MULT | TOKENS.DIV | TOKENS.MOD:
+        case TOKENS.MULT | TOKENS.DIV | TOKENS.FDIV | TOKENS.MOD:
             return 10
 
         case TOKENS.ADD | TOKENS.SUBT:
@@ -113,7 +115,7 @@ class Parser:
             pos = self.peek(-1).pos
             pos.start = pos.end + 1
             pos.end = pos.start
-            self.runtime.report(SyntaxError(f"expected '{type.value}'."), pos)
+            self.runtime.report(KSSyntaxException(f"expected '{type.value}'."), pos, syntax = True)
 
         self.advance()
 
@@ -123,7 +125,7 @@ class Parser:
             pos = self.peek(-1).pos
             pos.start = pos.end + 1
             pos.end = pos.start
-            self.runtime.report(SyntaxError(f"expected '{keyword.value}'."), pos)
+            self.runtime.report(KSSyntaxException(f"expected '{keyword.value}'."), pos, syntax = True)
 
         self.advance()
 
@@ -134,9 +136,7 @@ class Parser:
 
 
     def parse_factor(self):
-        token = self.current
-
-        match token.type:
+        match self.current.type:
             case TOKENS.LPAREN:
                 self.advance()
                 expression = self.parse_binary_expression()
@@ -144,6 +144,7 @@ class Parser:
                 return expression
 
             case TOKENS.LBRACKET:
+                token = self.current
                 self.advance()
                 values = []
 
@@ -152,7 +153,7 @@ class Parser:
                     self.ignore_token_advance(TOKENS.COMMA)
 
                 self.advance()
-                node = self.parse_accessors(ArrayNode(values))
+                node = self.parse_accessors(ArrayNode(values).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end)))
 
                 if self.current.type == TOKENS.EQUALS:
                     self.advance()
@@ -162,10 +163,11 @@ class Parser:
                 return node
 
             case TOKENS.KEYWORD:
-                match token.value:
+                match self.current.value:
                     case KEYWORDS.TRUE | KEYWORDS.FALSE:
+                        token = self.current
                         self.advance()
-                        return BOOL_NODES[0 if token.value.value == "false" else 1]
+                        return BOOL_NODES[0 if token.value.value == "false" else 1].set_pos(token.pos)
 
                     case KEYWORDS.NULL:
                         self.advance()
@@ -181,43 +183,68 @@ class Parser:
                         return self.parse_while_statement()
 
                     case KEYWORDS.CONTINUE:
+                        token = self.current
                         self.advance()
-                        return CONTINUE_NODE
+                        return CONTINUE_NODE.set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
                     
                     case KEYWORDS.BREAK:
+                        token = self.current
                         self.advance()
-                        return BREAK_NODE
+                        expression = NUMBER_NODES[1 + 255]
+
+                        if self.current.type != TOKENS.SEMICOLON:
+                            expression = self.parse_binary_expression()
+
+                        return BreakNode(expression).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
 
                     case KEYWORDS.FUNC:
                         return self.parse_function_statement()
 
                     case KEYWORDS.RETURN:
+                        token = self.current
                         self.advance()
-                        return ReturnNode(self.parse_binary_expression())
+                        expression = None
+
+                        if self.current.type != TOKENS.SEMICOLON:
+                            expression = self.parse_binary_expression()
+
+                        return ReturnNode(expression).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
 
                     case KEYWORDS.CLASS:
                         return self.parse_class_statement()
 
                     case KEYWORDS.STATIC:
+                        token = self.current
                         self.advance()
-                        return StaticNode(self.parse_binary_expression())
+                        return StaticNode(self.parse_binary_expression()).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
 
                     case KEYWORDS.NEW:
+                        token = self.current
                         self.advance()
                         factor = self.parse_factor()
-                        return ClassAccessNode(factor.node, factor.args)
+                        return ClassAccessNode(factor.node, factor.args).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
 
                     case k:
                         raise Exception(f"Invalid keyword: '{k}'")
 
             case TOKENS.IDENTIFIER:
+                token = self.current
                 name = token.value
                 self.advance()
 
                 if self.current.type == TOKENS.FLOAT:
-                    self.runtime.report(SyntaxError("expected identifier."), self.current.pos)
+                    self.runtime.report(KSSyntaxException("expected identifier."), self.current.pos, syntax = True)
 
-                node = VarAccessNode(name)
+                node = VarAccessNode(name).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
+                #typed = None
+
+                #if self.current.type == TOKENS.DOTDOT:
+                #    self.advance()
+
+                #    if self.current.type != TOKENS.IDENTIFIER:
+                #        self.runtime.report(KSSyntaxException("expected identifier."), self.current.pos)
+
+                #    typed = self.current.value
 
                 match self.current.type:
                     case TOKENS.ASSIGNMENT:
@@ -246,25 +273,28 @@ class Parser:
                 return node
 
             case t if t in (TOKENS.ADD, TOKENS.SUBT, TOKENS.NOT, TOKENS.BITNOT):
+                token = self.current
                 self.advance()
                 factor = self.parse_factor()
                 operation_node = UNARY_OPERATOR_NODES[token.type]
-                return operation_node(factor)
+                return operation_node(factor).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
 
             case t if t in (TOKENS.INT, TOKENS.FLOAT):
+                token = self.current
                 self.advance()
 
                 if token.value + 255 in NUMBER_NODES:
                     return NUMBER_NODES[token.value + 255]
 
-                return NumberNode(token.value)
+                return NumberNode(token.value).set_pos(token.pos)
 
             case TOKENS.STRING:
+                token = self.current
                 self.advance()
-                return StringNode(token.value)
+                return StringNode(token.value).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
 
             case _:
-                self.runtime.report(SyntaxError(f"unexpected syntax."), token.pos)
+                self.runtime.report(KSSyntaxException(f"unexpected syntax."), self.current.pos, syntax = True)
 
 
     def parse_accessors(self, node):
@@ -276,7 +306,7 @@ class Parser:
             self.necessary_token_advance(TOKENS.RBRACKET)
 
         for a in accessors:
-            node = AccessorNode(node, a)
+            node = AccessorNode(node, a).set_pos(node.pos)
 
         match self.current.type:
             case TOKENS.LPAREN:
@@ -293,7 +323,7 @@ class Parser:
         index = 0
 
         if self.current.type != TOKENS.LPAREN:
-            self.runtime.report(SyntaxError("expected '('."), self.current.pos)
+            self.runtime.report(KSSyntaxException("expected '('."), self.current.pos, syntax = True)
 
         while self.current.type == TOKENS.LPAREN:
             self.advance()
@@ -303,7 +333,7 @@ class Parser:
             index += 1
 
         for a in args:
-            node = FunctionAccessNode(node, a)
+            node = FunctionAccessNode(node, a).set_pos(node.pos)
 
         match self.current.type:
             case TOKENS.LBRACKET:
@@ -322,12 +352,12 @@ class Parser:
             self.advance()
 
             if self.current.type != TOKENS.IDENTIFIER:
-                self.runtime.report(SyntaxError("expected identifier."), self.current.pos)
+                self.runtime.report(KSSyntaxException("expected identifier."), self.current.pos, syntax = True)
 
             accessors.append(self.parse_factor())
 
         for a in accessors:
-            node = PropertyAccessNode(node, a)
+            node = PropertyAccessNode(node, a).set_pos(node.pos)
 
         match self.current.type:
             case TOKENS.LBRACKET:
@@ -341,9 +371,9 @@ class Parser:
 
     def parse_assigners(self, node, value_expression):
         try:
-            return AssignerNode(node.node, node.index_expression, value_expression)
+            return AssignerNode(node.node, node.index_expression, value_expression).set_pos(node.pos)
         except:
-            return VarAssignNode(node.name, value_expression)
+            return VarAssignNode(node.name, value_expression).set_pos(node.pos)
 
 
     def parse_statement(self, first_advance = True, has_condition = True):
@@ -362,7 +392,7 @@ class Parser:
                 self.necessary_token_advance(TOKENS.RPAREN)
             else:
                 if self.current.type == TOKENS.RPAREN:
-                    self.runtime.report(SyntaxError("unexpected ')'."), self.current.pos)
+                    self.runtime.report(KSSyntaxException("unexpected ')'."), self.current.pos, syntax = True)
 
                 self.ignore_token_advance(TOKENS.RPAREN)
 
@@ -373,9 +403,10 @@ class Parser:
                 self.necessary_token_advance(TOKENS.RCURLY)
 
             case TOKENS.ARROW:
+                token = self.current
                 self.advance()
                 expressions = self.parse_expressions(once = True)
-                expressions.expressions[0] = ReturnNode(expressions.expressions[0])
+                expressions.expressions[0] = ReturnNode(expressions.expressions[0]).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
             
             case _:
                 expressions = self.parse_expressions(once = True)
@@ -384,6 +415,7 @@ class Parser:
 
 
     def parse_if_statement(self):
+        token = self.current
         if_clauses = []
 
         while self.current.value in (KEYWORDS.IF, KEYWORDS.ELIF):
@@ -394,10 +426,11 @@ class Parser:
         if self.current.value == KEYWORDS.ELSE:
             (_, else_expressions) = self.parse_statement(has_condition = False)
 
-        return IfNode(if_clauses, else_expressions)
+        return IfNode(if_clauses, else_expressions).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
 
 
     def parse_for_statement(self):
+        token = self.current
         self.advance()
         self.ignore_token_advance(TOKENS.LPAREN)
         identifier = self.parse_binary_expression()
@@ -406,15 +439,17 @@ class Parser:
         self.ignore_token_advance(TOKENS.RPAREN)
 
         (_, expressions) = self.parse_statement(first_advance = False, has_condition = False)
-        return ForNode(identifier.name, iterable, expressions)
+        return ForNode(identifier.name, iterable, expressions).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
 
 
     def parse_while_statement(self):
+        token = self.current
         (condition, expressions) = self.parse_statement()
-        return WhileNode(condition, expressions)
+        return WhileNode(condition, expressions).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
 
 
     def parse_function_statement(self):
+        token = self.current
         self.advance()
         name = None
         bound_name = None
@@ -427,7 +462,7 @@ class Parser:
             self.advance()
 
             if self.current.type != TOKENS.IDENTIFIER:
-                self.runtime.report(SyntaxError("expected identifier."), self.current.pos)
+                self.runtime.report(KSSyntaxException("expected identifier."), self.current.pos, syntax = True)
 
             bound_name = name
             name = self.current.value
@@ -437,14 +472,15 @@ class Parser:
         args = []
         self.parse_arguments(args)
         (_, expressions) = self.parse_statement(has_condition = False)
-        return FunctionNode(name, args, expressions, bound_name)
+        return FunctionNode(name, args, expressions, bound_name).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
 
     
     def parse_class_statement(self):
+        token = self.current
         self.advance()
 
         if self.current.type != TOKENS.IDENTIFIER:
-            self.runtime.report(SyntaxError("expected identifier."), self.current.pos)
+            self.runtime.report(KSSyntaxException("expected identifier."), self.current.pos, syntax = True)
             
         name = self.current.value
         self.advance()
@@ -458,15 +494,15 @@ class Parser:
             self.advance()
 
             if self.current.type != TOKENS.IDENTIFIER:
-                self.runtime.report(SyntaxError("expected identifier."), self.current.pos)
+                self.runtime.report(KSSyntaxException("expected identifier."), self.current.pos, syntax = True)
 
-            node = VarAccessNode(self.current.value)
+            node = VarAccessNode(self.current.value).set_pos(self.current.pos)
             self.advance()
             inherit = self.parse_function_access(node)
-            inherit = ClassAccessNode(inherit.node, inherit.args)
+            inherit = ClassAccessNode(inherit.node, inherit.args).set_pos(inherit.pos)
 
         (_, expressions) = self.parse_statement(first_advance = False, has_condition = False)
-        return ClassNode(name, args, expressions, inherit)
+        return ClassNode(name, args, expressions, inherit).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
 
 
     def parse_arguments(self, args, detect_optional = True):
@@ -479,24 +515,25 @@ class Parser:
             arg = self.parse_binary_expression()
 
             if isinstance(arg, VarAssignNode):
-                node = KeywordArgumentNode(arg.name, arg.expression)
+                node = KeywordArgumentNode(arg.name, arg.expression).set_pos(arg.pos)
                 has_optional = True
             else:
                 if detect_optional and has_optional:
-                    self.runtime.report(ArgumentError("keyword arguments must be at the end."))
+                    self.runtime.report(KSArgumentException("keyword arguments must be at the end."), self.current.pos, syntax = True)
 
-                node = ArgumentNode(arg)
+                node = ArgumentNode(arg).set_pos(arg.pos)
 
             args.append(node)
 
             if self.current.type not in (TOKENS.COMMA, TOKENS.RPAREN):
-                self.runtime.report(SyntaxError("expected ',' or ')'."), self.current.pos)
+                self.runtime.report(KSSyntaxException("expected ',' or ')'."), self.current.pos, syntax = True)
 
             if self.current.type == TOKENS.COMMA:
                 self.advance()
 
 
     def parse_attribute_expression(self, node):
+        token = self.current
         name = node.name
         self.advance()
 
@@ -513,12 +550,13 @@ class Parser:
             (_, assign_expressions) = self.parse_statement(first_advance = False, has_condition = False)
             self.necessary_token_advance(TOKENS.RCURLY)
         else:
-            self.runtime.report(SyntaxError("expected keyword(s) 'assign', 'access'."), self.current.pos)
+            self.runtime.report(KSSyntaxException("expected keyword(s) 'assign', 'access'."), self.current.pos, syntax = True)
 
-        return AttributeNode(name, assign_expressions, access_expressions)
+        return AttributeNode(name, assign_expressions, access_expressions).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
 
 
     def parse_binary_expression(self, priority = 0):
+        token = self.current
         left = self.parse_factor()
 
         while (operator_priority := binary_operator_priority(self.current)) > priority and operator_priority != -1:
@@ -526,7 +564,7 @@ class Parser:
             self.advance()
             right = self.parse_binary_expression(operator_priority)
             operation_node = BINARY_OPERATOR_NODES[operator.type]
-            left = operation_node(left, right)
+            left = operation_node(left, right).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
 
         return left
 
@@ -553,5 +591,4 @@ class Parser:
         self.tree = self.parse_expressions()
 
         if self.current.type != TOKENS.ENDOFFILE:
-            self.runtime.report(SyntaxError(f"invalid syntax."), self.current.pos)
-            #raise Exception("Invalid syntax.")
+            self.runtime.report(KSSyntaxException(f"invalid syntax."), self.current.pos, syntax = True)

@@ -21,6 +21,11 @@ class DataType:
         return value
 
 
+    def set_pos(self, pos):
+        self.pos = pos
+        return self
+
+
     def copy(self):
         return self
 
@@ -104,6 +109,20 @@ class Number(DataType):
     def __rtruediv__(self, other):
         if isinstance(other, Number):
             return NumberCache(other.value / self.value)
+
+        return NotImplemented
+
+
+    def __floordiv__(self, other):
+        if isinstance(other, Number):
+            return NumberCache(self.value // other.value)
+
+        return NotImplemented
+
+
+    def __rfloordiv__(self, other):
+        if isinstance(other, Number):
+            return NumberCache(other.value // self.value)
 
         return NotImplemented
 
@@ -308,7 +327,7 @@ class String(DataType):
         self.scope.assign("this", self)
 
         for b in String.bound:
-            self.scope.assign(b.name, Function(self.scope, b.name, b.args, b.expressions))
+            self.scope.assign(b.name, Function(self.scope, b.name, b.args, b.expressions).set_pos(None))
 
 
     @staticmethod
@@ -386,7 +405,7 @@ class Array(DataType):
     @staticmethod
     def Constructor(_, scope):
         value = scope.access("value")
-        return Array(list(value.value))
+        return Array(scope, list(value.value)).set_pos(value.pos)
     
 
     def Func_Append(self, _, scope):
@@ -400,7 +419,7 @@ class Array(DataType):
         for v in self.value:
             new_value.append(v.copy())
 
-        return Array(self.scope, new_value)
+        return Array(self.scope, new_value).set_pos(self.pos)
 
 
     def __mul__(self, other):
@@ -446,7 +465,7 @@ class Function(DataType):
 
 
     def copy(self):
-        return Function(self.scope, self.name, self.args, self.expressions)
+        return Function(self.scope, self.name, self.args, self.expressions).set_pos(self.pos)
 
     
     def __repr__(self):
@@ -490,10 +509,6 @@ class Attribute(DataType):
         self.scope = scope
         self.assign_expressions = assign_expressions
         self.access_expressions = access_expressions
-
-
-    def copy(self):
-        return self
 
 
     def __repr__(self):
@@ -548,7 +563,7 @@ class BuiltIn:
         for kw in kw_args:
             total_args.append(KeywordArgumentNode(kw[0], kw[1]))
 
-        scope.assign(func_name, Function(scope.copy(), func_name, total_args, ExpressionsNode([BuiltInFunctionNode(func)])))
+        scope.assign(func_name, Function(scope.copy(), func_name, total_args, ExpressionsNode([BuiltInFunctionNode(func)])).set_pos(None))
 
 
     @staticmethod
@@ -561,7 +576,7 @@ class BuiltIn:
         for kw in kw_args:
             total_args.append(KeywordArgumentNode(kw[0], kw[1]))
 
-        scope.assign(class_name, Class(scope.copy(), class_name, total_args, ExpressionsNode([BuiltInClassNode(func)]), None))
+        scope.assign(class_name, Class(scope.copy(), class_name, total_args, ExpressionsNode([BuiltInClassNode(func)]), None).set_pos(None))
 
 
     @staticmethod

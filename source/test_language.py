@@ -221,6 +221,7 @@ class TestLanguage(unittest.TestCase):
     def test_binary_operations(self):
         self.assertEqual(language("5 * 9;"), 45)
         self.assertEqual(language("10 / 2;"), 5)
+        self.assertEqual(language("10 \\ 3;"), 3)
         self.assertEqual(language("18 % 12;"), 6)
         self.assertEqual(language("2 + 2;"), 4)
         self.assertEqual(language("10 - 9;"), 1)

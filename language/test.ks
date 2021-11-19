@@ -1,6 +1,40 @@
-class Test(value) {
-    this.value = value;
+
+func Add2() {
+    return 1 + true;
 }
+
+func Add() {
+    a = "";
+    return Add2();
+}
+
+Add();
+
+#>
+for (i in [0, 1, 2, 3]) {
+    for (j in [4, 5, 6, 7]) {
+        if (i + j == 6) {
+            break 2;
+        }
+
+        Console.Print(new String(i) + ", " + new String(j));
+    }
+}
+<#
+
+#>
+for (i in [0, 1, 2, 3]) {
+    for (j in [0, 1, 2, 3]) {
+        for (k in [0, 1, 2, 3]) {
+            if (i + j + k == 5) {
+                break 3;
+            }
+
+            Console.Print(new String(i) + ", " + new String(j) + ", " + new String(k));
+        }
+    }
+}
+<#
 
 #>
 class Operator(left, op, right) {

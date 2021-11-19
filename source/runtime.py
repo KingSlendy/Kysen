@@ -5,6 +5,7 @@ class Runtime:
         self.filename = filename
         self.text = text.split("\n")
         self.unittest = unittest
+        self.place = "<program>"
         self.stacktrace = []
 
 
@@ -16,16 +17,19 @@ class Runtime:
         self.stacktrace.pop()
 
     
-    def report(self, error, pos):
+    def report(self, error, pos, syntax = False):
         #[pos.start:pos.end]
-        self.stacktrace = [("<program>", pos)] + self.stacktrace
+        self.stacktrace += [(self.place, pos)]
         stacktrace = "\n".join([f"  File {self.filename}, {c} at line {p.line}\n    {self.text[p.line - 1].strip()}\n" for c, p in self.stacktrace])
-        last = "    " + self.text[pos.line - 1].strip()
-        arrows = [" "] * (len(last) + 1)
-        #arrows[pos.end] = "^"
+        arrows = ""
 
-        #for i in range(pos.start, pos.end + 1):
-        #    arrows[i] = "^"
+        if syntax:
+            last = "    " + self.text[pos.line - 1].strip()
+            arrows = [" "] * (len(last) + 1)
+            #arrows[pos.end] = "^"
+
+            #for i in range(pos.start, pos.end + 1):
+            #    arrows[i] = "^"
 
         arrows = "".join(arrows)
         raise RuntimeException(f"Stacktrace (most recent call last):\n{stacktrace}    {arrows}\n{error}")
@@ -36,3 +40,7 @@ class Position():
         self.line = line
         self.start = start
         self.end = end if end != None else start
+
+
+    def copy(self):
+        return Position(self.line, self.start, self.end)

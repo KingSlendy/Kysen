@@ -2,22 +2,32 @@ class RuntimeException(Exception):
     pass
 
 
-class Error:
+class KSException:
     def __init__(self, message):
         self.message = message
 
 
     def __repr__(self):
-        return f"{type(self).__name__}: {self.message}"
+        return f"{type(self).__name__[2:]}: {self.message}"
 
 
-class IllegalCharError(Error):
+class KSIllegalCharException(KSException):
     def __init__(self, char):
         self.message = f"illegal character '{char}'."
 
 
-class SyntaxError(Error):
+class KSSyntaxException(KSException):
     pass
 
-class ArgumentError(Error):
+
+class KSArgumentException(KSException):
+    pass
+
+
+class KSBinaryOperationException(KSException):
+    def __init__(self, operator, type_left, type_right):
+        self.message = f"unsupported operator '{operator}' for types {type_left.__name__} and {type_right.__name__}."
+
+
+class KSTypeException(KSException):
     pass

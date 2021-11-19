@@ -147,6 +147,10 @@ class Lexer:
 
         try:
             keyword = KEYWORDS[value.upper()]
+
+            if keyword.value != value:
+                raise KeyError()
+
             return Token(TOKENS.KEYWORD, keyword).set_pos(self.runline, pos_start, self.runpos - 1)
         except KeyError:
             return Token(TOKENS.IDENTIFIER, value).set_pos(self.runline, pos_start, self.runpos - 1)
@@ -218,6 +222,10 @@ class Lexer:
                 
                 case "/":
                     self.register_token(self.make_binary_token("/", TOKENS.DIV, TOKENS.DIV))
+
+                case "\\":
+                    self.register_token(Token(TOKENS.FDIV).set_pos(self.runline, self.runpos))
+                    self.advance()
 
                 case "%":
                     self.register_token(self.make_binary_token(None, TOKENS.MOD, None))
@@ -302,5 +310,4 @@ class Lexer:
                     self.register_token(self.make_number_token())
 
                 case c:
-                    self.runtime.report(IllegalCharError(c), Position(self.runline, self.runpos))
-                    #raise Exception(f"Invalid character: '{c}'")
+                    self.runtime.report(KSIllegalCharException(c), Position(self.runline, self.runpos), syntax = True)

@@ -31,7 +31,7 @@ def Func_Range(_, scope):
     for i, n in enumerate(r):
         r[i] = NumberCache(n)
 
-    return Array(scope.copy(), r)
+    return Array(scope.copy(), r).set_pos(None)
 
 
 def builtin_add_all(scope):
