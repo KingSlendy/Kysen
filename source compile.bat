@@ -1,1 +1,1 @@
-start cmd.exe /c "pyinstaller --onefile main.py"
+start cmd.exe /c "pyinstaller --onefile source\main.py"
