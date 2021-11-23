@@ -1,3 +1,6 @@
+
+t = new Test();
+
 class Test() {
     static value = 10;
 }
@@ -5,9 +8,6 @@ class Test() {
 class Test2() : Test() {
 
 }
-
-t = new Test2();
-Console.Print(Test2.value);
 
 #>
 for (i in [0, 1, 2, 3]) {

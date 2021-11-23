@@ -22,9 +22,15 @@ class Interpreter:
 
         match node:
             case n if type(n) == ExpressionsNode:
+                declaration_expressions = ExpressionsNode([e for e in n.expressions if type(e) in (ClassNode, FunctionNode)])
+                normal_expressions = ExpressionsNode([e for e in n.expressions if type(e) not in (ClassNode, FunctionNode)])
+
+                for e in declaration_expressions:
+                    self.visit(context, scope, e)
+
                 results = []
 
-                for e in n.expressions:
+                for e in normal_expressions:
                     value = self.visit(context, scope, e)
 
                     if type(value) in (ReturnNode, ContinueNode, BreakNode):

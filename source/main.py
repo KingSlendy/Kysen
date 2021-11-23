@@ -6,7 +6,7 @@ def run(filename, text):
     try:
         compiled = Runner.execute(filename, text)
 
-        if compiled != None:
+        if filename == "<stdin>" and compiled != None:
             print(compiled)
     except RuntimeException as e:
         print(e)
