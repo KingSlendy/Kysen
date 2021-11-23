@@ -168,6 +168,14 @@ class Parser:
 
                 return node
 
+            case TOKENS.LESS:
+                token = self.current
+                self.advance()
+                name = self.necessary_token_advance(TOKENS.IDENTIFIER).value
+                self.necessary_token_advance(TOKENS.GREATER)
+                value = self.parse_factor()
+                return CastNode(name, value).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
+
             case TOKENS.KEYWORD:
                 match self.current.value:
                     case KEYWORDS.TRUE | KEYWORDS.FALSE:
@@ -230,6 +238,11 @@ class Parser:
                         self.necessary_token_check(TOKENS.IDENTIFIER)
                         factor = self.parse_factor()
                         return ClassAccessNode(factor.node, factor.args).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
+
+                    case KEYWORDS.CAST:
+                        token = self.current
+                        func = self.parse_function_statement(special = True)
+                        return SpecialFunctionNode(func).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
 
                     case k:
                         raise Exception(f"Invalid keyword: '{k}'")
@@ -440,20 +453,24 @@ class Parser:
         return WhileNode(condition, expressions).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
 
 
-    def parse_function_statement(self):
+    def parse_function_statement(self, special = False):
         token = self.current
         self.advance()
         name = None
         bound_name = None
 
-        if self.current.type == TOKENS.IDENTIFIER:
-            name = self.current.value
-            self.advance()
+        if not special:
+            if self.current.type == TOKENS.IDENTIFIER:
+                name = self.current.value
+                self.advance()
 
-        if self.current.type == TOKENS.DOT:
+            if self.current.type == TOKENS.DOT:
+                self.advance()
+                bound_name = name
+                name = self.necessary_token_advance(TOKENS.IDENTIFIER).value
+        else:
+            name = self.current
             self.advance()
-            bound_name = name
-            name = self.necessary_token_advance(TOKENS.IDENTIFIER).value
 
         args = []
         self.parse_arguments(args)

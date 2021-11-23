@@ -160,6 +160,16 @@ class KeywordArgumentNode(Node):
         return f"KEYWORD ARGUMENT: {self.name} = {self.expression}"
 
 
+class CastNode(Node):
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
+
+
+    def __repr__(self):
+        return f"CAST: {self.name} => {self.identifier}"
+
+
 class ReturnNode(Node):
     def __init__(self, expression):
         self.expression = expression
@@ -356,6 +366,15 @@ class StaticNode(Node):
 
     def __repr__(self):
         return f"STATIC: {self.node}"
+
+
+class SpecialFunctionNode(Node):
+    def __init__(self, func):
+        self.func = func
+
+    
+    def __repr__(self):
+        return f"SPECIAL FUNC: {self.func}"
 
 
 class BuiltInFunctionNode(Node):

@@ -8,6 +8,7 @@ class DataType:
         self.scope = scope
         self.value = value
         self.static = False
+        self.specials = Scope()
 
 
     @staticmethod
@@ -37,6 +38,27 @@ class DataType:
 class Number(DataType):
     def __init__(self, value):
         super().__init__(TYPE_SCOPE, value)
+        BuiltIn.func_assign(self.specials, Number.__name__, ["object"], [], Number.Func_Cast_Number)
+        BuiltIn.func_assign(self.specials, Bool.__name__, ["object"], [], Number.Func_Cast_Bool)
+        BuiltIn.func_assign(self.specials, String.__name__, ["object"], [], Number.Func_Cast_String)
+
+
+    @staticmethod
+    def Func_Cast_Number(_, scope):
+        object = scope.access("object")
+        return object
+
+
+    @staticmethod
+    def Func_Cast_Bool(_, scope):
+        object = scope.access("object")
+        return BoolCache(bool(object.value))
+
+
+    @staticmethod
+    def Func_Cast_String(_, scope):
+        object = scope.access("object")
+        return String(scope.copy(), str(object.value))
 
 
     @staticmethod
@@ -284,6 +306,27 @@ class Number(DataType):
 class Bool(DataType):
     def __init__(self, value):
         super().__init__(TYPE_SCOPE, value)
+        BuiltIn.func_assign(self.specials, Number.__name__, ["object"], [], Bool.Func_Cast_Number)
+        BuiltIn.func_assign(self.specials, Bool.__name__, ["object"], [], Bool.Func_Cast_Bool)
+        BuiltIn.func_assign(self.specials, String.__name__, ["object"], [], Bool.Func_Cast_String)
+
+
+    @staticmethod
+    def Func_Cast_Number(_, scope):
+        object = scope.access("object")
+        return NumberCache(int(object.value))
+
+
+    @staticmethod
+    def Func_Cast_Bool(_, scope):
+        object = scope.access("object")
+        return object
+
+
+    @staticmethod
+    def Func_Cast_String(_, scope):
+        object = scope.access("object")
+        return String(scope.copy(), str(object.value))
 
 
     @staticmethod
@@ -328,6 +371,28 @@ class String(DataType):
 
         for b in String.bound:
             self.scope.assign(b.name, Function(self.scope, b.name, b.args, b.expressions).set_pos(None))
+
+        BuiltIn.func_assign(self.specials, Number.__name__, ["object"], [], String.Func_Cast_Number)
+        BuiltIn.func_assign(self.specials, Bool.__name__, ["object"], [], String.Func_Cast_Bool)
+        BuiltIn.func_assign(self.specials, String.__name__, ["object"], [], String.Func_Cast_String)
+
+
+    @staticmethod
+    def Func_Cast_Number(_, scope):
+        object = scope.access("object")
+        return NumberCache(int(object.value))
+
+
+    @staticmethod
+    def Func_Cast_Bool(_, scope):
+        object = scope.access("object")
+        return BoolCache(bool(object.value))
+
+
+    @staticmethod
+    def Func_Cast_String(_, scope):
+        object = scope.access("object")
+        return object.copy()
 
 
     @staticmethod
@@ -389,7 +454,6 @@ class String(DataType):
 
     def __iter__(self):
         yield from self.value
-String.bound = []
 
 
 class Array(DataType):
@@ -452,7 +516,6 @@ class Array(DataType):
 
     def __iter__(self):
         yield from self.value
-Array.bound = []
 
 
 class Function(DataType):
@@ -486,7 +549,7 @@ class Class(Function):
     
 class Instance(DataType):
     def __init__(self, scope, name, parent):
-        self.scope = scope
+        super().__init__(scope)
         self.name = name
         self.parent = parent
         self.scope.assign("this", self)
@@ -586,21 +649,16 @@ class BuiltIn:
 
 
     @staticmethod
-    def func_access(interpreter, scope, func, args, kw_args):
-        expressions = func.expressions.expressions
+    def func_access(interpreter, scope, func, args, kw_args, pos):
+        total_args = []
 
-        if len(expressions) > 0 and not isinstance(expressions[0], BuiltInFunctionNode):
-            total_args = []
+        for a in args:
+            total_args.append(ArgumentNode(a))
 
-            for a in args:
-                total_args.append(ArgumentNode(VarAccessNode(a)))
+        for kw in kw_args:
+            total_args.append(KeywordArgumentNode(kw[0], kw[1]))
 
-            for kw in kw_args:
-                total_args.append(KeywordArgumentNode(kw[0], kw[1]))
-
-            return interpreter.visit(None, scope, FunctionAccessNode(func, total_args))
-        else:
-            return expressions[0].expressions(interpreter, scope)
+        return interpreter.visit({"built-in": True}, scope, FunctionAccessNode(func, total_args).set_pos(pos))
 
 
 def NumberCache(n):
@@ -620,3 +678,8 @@ def BoolCache(v):
 NUMBER_TYPES = [Number(n) for n in range(-255, 256)]
 BOOL_TYPES = [Bool(False), Bool(True)]
 NULL_TYPE = Null()
+
+Number.bound = []
+Bool.bound = []
+String.bound = []
+Array.bound = []

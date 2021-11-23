@@ -39,3 +39,7 @@ class KSValueException(KSException):
 
 class KSPropertyException(KSException):
     pass
+
+
+class KSCastException(KSException):
+    pass

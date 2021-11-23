@@ -1,2 +1,7 @@
+.vscode/
 build/
+dist/
+source/__pycache__
+source/unittest execute.bat
+main.spec
 source compile.bat

@@ -65,6 +65,7 @@ class KEYWORDS(Enum):
     CLASS = "class"
     STATIC = "static"
     NEW = "new"
+    CAST = "cast"
     OPLEFT = "opleft"
     OPRIGHT = "opright"
     ASSIGN = "assign"

@@ -43,8 +43,8 @@ class Interpreter:
 
                 value = self.visit(context, old_scope, n.expression)
 
-                if not issubclass(type(value), DataType):
-                    raise Exception(f"Cannot assign a non-Type value to variable '{n.name}'.")
+                #if not issubclass(type(value), DataType):
+                #    raise Exception(f"Cannot assign a non-Type value to variable '{n.name}'.")
 
                 if n.name in scope:
                     attribute = scope.access(n.name)
@@ -104,7 +104,6 @@ class Interpreter:
 
             case n if type(n) in (FunctionAccessNode, ClassAccessNode):
                 identifier = self.visit(context, scope, n.node)
-                context = None
                 old_scope = scope
 
                 if last_scope != None:
@@ -181,12 +180,12 @@ class Interpreter:
 
                         scope.assign("base", base)
 
-
-                self.runtime.push(self.runtime.place, n.pos)
-                self.runtime.place = identifier.name
+                if context == None:
+                    self.runtime.push(self.runtime.place, n.pos)
+                    self.runtime.place = identifier.name
 
                 # Visit all the Function/Class expressions.
-                value = self.visit(context, scope, identifier.expressions)
+                value = self.visit({"instance": instance}, scope, identifier.expressions)
 
                 if type(value) == ReturnNode:
                     if value.expression != None and type(value.expression) != DataType:
@@ -199,14 +198,17 @@ class Interpreter:
                     
                     return value.copy()
 
-                self.runtime.place = self.runtime.pop()
+                if context == None:
+                    self.runtime.place = self.runtime.pop()
+                
+                context = None
                 return instance if instance != None else NULL_TYPE
 
             case n if type(n) == PropertyAccessNode:
                 identifier = self.visit(context, scope, n.node)
 
-                #if type(identifier) not in (String, Array, Class, Instance):
-                    #raise Exception(f"Cannot check for properties in variable of type '{type(identifier).__name__}'.")
+                if type(identifier) not in (String, Array, Class, Instance):
+                    self.runtime.report(KSPropertyException(f"cannot check properties inside object of type {type(identifier).__name__}."), identifier.pos)
 
                 if type(identifier) in (String, Array):
                     identifier.name = type(identifier).__name__
@@ -245,16 +247,13 @@ class Interpreter:
 
                         if type(n) == FunctionNode:
                             if n.bound != None:
-                                match n.bound:
-                                    case "String":
-                                        String.bound.append(n)
-
-                                    case "Array":
-                                        Array.bound.append(n)
-
-                                    case _:
-                                        bind = scope.access(n.bound)
-                                        bind.expressions.insert(0, n)
+                                if n.bound == "String":
+                                    String.bound.append(n)
+                                elif n.bound == "Array":
+                                    Array.bound.append(n)
+                                else:
+                                    bind = scope.access(n.bound)
+                                    bind.expressions.insert(0, n)
 
                                 n.bound = None
                             else:
@@ -297,6 +296,18 @@ class Interpreter:
 
                         return cast_type(n.value).set_pos(n.pos)
 
+            case n if type(n) == CastNode:
+                cast = scope.access(n.name)
+
+                if type(cast) != Class:
+                    self.runtime.report(KSCastException(f"cannot use type {type(n).__name__} for casting."), n.pos)
+
+                value = self.visit(context, scope, n.value)
+
+                try:
+                    return BuiltIn.func_access(self, scope, value.specials.access(cast.name), [value], [], n.pos)
+                except:
+                    self.runtime.report(KSCastException(f"cannot cast {type(value).__name__} to {cast.name}."), n.pos)
 
             case n if isinstance(n, UnaryOperationNode):
                 right = self.visit(context, scope, n.right)
@@ -507,11 +518,15 @@ class Interpreter:
 
                 return node
 
+            case n if type(n) == SpecialFunctionNode:
+                instance = context["instance"]
+                print(instance.specials)
+
             case n if type(n) in (BuiltInFunctionNode, BuiltInClassNode):
                 return ReturnNode(n.expressions(self, scope))
 
             case n:
-                raise Exception(f"Invalid node: {n}")
+                raise Exception(f"Invalid node: {type(n).__name__}")
 
     def run(self):
         global global_scope, last_scope
