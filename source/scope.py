@@ -32,6 +32,19 @@ class Scope:
         return Scope(self)
 
 
+    def transfer(self, scope):
+        from datatypes import Function, Class
+
+        for k, v in self.items():
+            if k != "this":
+                value = v.copy()
+
+                if type(v) in (Function, Class):
+                    value.scope = scope.copy()
+
+                scope.assign(k, value)
+
+
     def items(self):
         return self.table.items()
 

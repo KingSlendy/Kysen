@@ -206,6 +206,16 @@ class TestLanguage(unittest.TestCase):
             t2 = new Test2(12, 8);
             t.Operation() + t2.Operation();
         """), 29)
+
+        self.assertEqual(language("""
+            class Test() {
+                static func Call() => "Hello!";
+            }
+
+            class Test2() : Test() { }
+
+            Test2.Call();
+        """), "Hello!")
         
 
     def test_unary_operations(self):

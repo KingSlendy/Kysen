@@ -22,8 +22,8 @@ class Interpreter:
 
         match node:
             case n if type(n) == ExpressionsNode:
-                declaration_expressions = ExpressionsNode([e for e in n.expressions if type(e) in (ClassNode, FunctionNode)])
-                normal_expressions = ExpressionsNode([e for e in n.expressions if type(e) not in (ClassNode, FunctionNode)])
+                declaration_expressions = ExpressionsNode([e for e in n.expressions if type(e) in (FunctionNode, ClassNode)])
+                normal_expressions = ExpressionsNode([e for e in n.expressions if type(e) not in (FunctionNode, ClassNode)])
 
                 for e in declaration_expressions:
                     self.visit(context, scope, e)
@@ -174,16 +174,7 @@ class Interpreter:
                     # This instance inherits from another class.
                     if instance.parent.inherit != None:
                         base = self.visit(context, scope, instance.parent.inherit)
-
-                        for k, v in base.scope.items():
-                            if k != "this":
-                                value = v.copy()
-
-                                if type(v) in (Function, Class):
-                                    value.scope = scope.copy()
-
-                                scope.assign(k, value)
-
+                        base.scope.transfer(scope)
                         scope.assign("base", base)
 
                 if context == None:
@@ -265,15 +256,21 @@ class Interpreter:
                             else:
                                 object = Function(scope, n.name, n.args, n.expressions).set_pos(n.pos)
                         elif type(n) == ClassNode:
-                            if n.inherit != None:
-                                scope.access(n.inherit.node.name)
-
                             object = Class(scope.copy(), n.name, n.args, n.expressions, n.inherit).set_pos(n.pos)
+                            
+                            if n.inherit != None:
+                                parent = scope.access(n.inherit.node.name)
+                                parent.scope.transfer(object.scope)
+
                             statics = []
 
                             for i, e in enumerate(n.expressions):
                                 if type(e) == StaticNode:
                                     self.visit(context, object.scope, e.node)
+
+                                    if n.inherit != None:
+                                        self.visit(context, parent.scope, e.node)
+
                                     statics.append(i)
 
                             statics.sort()

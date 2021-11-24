@@ -1,13 +1,17 @@
 
-t = new Test();
+t = new Test2();
 
 class Test() {
-    static value = 10;
+    static func Call() {
+        Console.Print("Hello!");
+    }
 }
 
 class Test2() : Test() {
 
 }
+
+Test2.Call();
 
 #>
 for (i in [0, 1, 2, 3]) {
