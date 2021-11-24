@@ -244,11 +244,9 @@ class Interpreter:
 
                         if type(n) == FunctionNode:
                             if n.bound != None:
-                                if n.bound == "String":
-                                    String.bound.append(n)
-                                elif n.bound == "Array":
-                                    Array.bound.append(n)
-                                else:
+                                try:
+                                    globals()[n.bound].bound.append(n)
+                                except KeyError:
                                     bind = scope.access(n.bound)
                                     bind.expressions.insert(0, n)
 

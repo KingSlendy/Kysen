@@ -297,7 +297,7 @@ class Lexer:
                         self.advance()
 
                 case ":":
-                    self.register_token(Token(TOKENS.DOTDOT).set_pos(self.runline, self.runpos))
+                    self.register_token(Token(TOKENS.COLON).set_pos(self.runline, self.runpos))
                     self.advance()
 
                 case c if c in WHITESPACE:

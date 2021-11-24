@@ -486,7 +486,7 @@ class Parser:
         self.parse_arguments(args)
         inherit = None
 
-        if self.current.type == TOKENS.DOTDOT:
+        if self.current.type == TOKENS.COLON:
             self.advance()
             inherit_name = self.necessary_token_advance(TOKENS.IDENTIFIER)
             node = VarAccessNode(inherit_name.value).set_pos(self.current.pos)
