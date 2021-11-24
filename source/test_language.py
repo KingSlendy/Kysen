@@ -1,5 +1,6 @@
 import unittest
 from datatypes import *
+from exceptions import RuntimeException
 from interpreter import Interpreter
 from lexer import Lexer
 from parser import Parser
@@ -605,7 +606,7 @@ class TestLanguage(unittest.TestCase):
                 this.country = "Europe";
 
                 func Info() =>
-                    base.Sound() + "\nName: " + this.name + "\nPrice: " + new String(this.price) + "\nColor: " + this.color + "\nCountry: " + this.country;
+                    base.Sound() + "\nName: " + this.name + "\nPrice: " + <String>this.price + "\nColor: " + this.color + "\nCountry: " + this.country;
             }
 
             class Ferrari488() : Ferrari("Ferrari488", 284700) {
@@ -650,4 +651,11 @@ class TestLanguage(unittest.TestCase):
 
 
     def test_errors(self):
-        pass
+        with self.assertRaises(RuntimeException):
+            language("3 + 2")
+
+        with self.assertRaises(RuntimeException):
+            language("3+")
+
+        #with self.assertRaises(RuntimeException):
+        #    language("a;")

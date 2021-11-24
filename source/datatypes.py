@@ -65,20 +65,10 @@ class Number(DataType):
     def Constructor(_, scope):
         value = scope.access("value")
 
-        match value:
-            case _ if isinstance(value, Number):
-                value = value.value
-            
-            case _ if isinstance(value, Bool):
-                value = 0 if value.value == False else 1
-
-            case _ if isinstance(value, String):
-                try:
-                    value = int(value.value)
-                except ValueError:
-                    value = float(value.value)
-
-        return NumberCache(value)
+        if type(value) == Number:
+            return NumberCache(value.value)
+        
+        raise Exception("Cannot cast value to Number.")
 
 
     def __pos__(self):
@@ -333,17 +323,10 @@ class Bool(DataType):
     def Constructor(_, scope):
         value = scope.access("value")
 
-        match value:
-            case _ if isinstance(value, Number):
-                value = (value.value == 1)
-            
-            case _ if isinstance(value, Bool):
-                value = value.value
-
-            case _ if isinstance(value, String):
-                value = (len(value.value) > 0)
-
-        return BoolCache(value)
+        if type(value) == Bool:
+            return BoolCache(value.value)
+        
+        raise Exception("Cannot cast value to Bool.")
 
 
     def __eq__(self, other):
@@ -396,11 +379,13 @@ class String(DataType):
 
 
     @staticmethod
-    def Constructor(interpreter, scope):
+    def Constructor(_, scope):
         value = scope.access("value")
-        value = DataType.func_default(interpreter, value, "ToString")
-        scope.remove("value")
-        return String(scope, str(value))
+        
+        if type(value) == String:
+            return String(scope, value.value)
+
+        raise Exception("Cannot cast value to String.")
 
 
     def __mul__(self, other):
@@ -469,7 +454,11 @@ class Array(DataType):
     @staticmethod
     def Constructor(_, scope):
         value = scope.access("value")
-        return Array(scope, list(value.value)).set_pos(value.pos)
+
+        if type(value) == Array:
+            return Array(scope, list(value.value)).set_pos(value.pos)
+        
+        raise Exception("Cannot cast value to Array.")
     
 
     def Func_Append(self, _, scope):
