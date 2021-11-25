@@ -4,22 +4,12 @@ from scope import Scope
 TYPE_SCOPE = Scope()
 
 class DataType:
-    def __init__(self, scope, value = None):
+    def __init__(self, scope, value = None, name = None):
         self.scope = scope
         self.value = value
+        self.name = name
         self.static = False
         self.specials = Scope()
-
-
-    @staticmethod
-    def func_default(interpreter, inst, name):
-        if isinstance(inst, Instance) and name in inst.scope:
-            func_ToString = inst.scope.access(name)
-            value = BuiltIn.func_access(interpreter, inst.scope, func_ToString, [], [])
-        else:
-            value = inst.value
-
-        return value
 
 
     def set_pos(self, pos):
@@ -37,7 +27,7 @@ class DataType:
 
 class Number(DataType):
     def __init__(self, value):
-        super().__init__(TYPE_SCOPE, value)
+        super().__init__(TYPE_SCOPE, value, self.__class__.__name__)
         BuiltIn.func_assign(self.specials, Number.__name__, ["object"], [], Number.Func_Cast_Number)
         BuiltIn.func_assign(self.specials, Bool.__name__, ["object"], [], Number.Func_Cast_Bool)
         BuiltIn.func_assign(self.specials, String.__name__, ["object"], [], Number.Func_Cast_String)
@@ -295,7 +285,7 @@ class Number(DataType):
 
 class Bool(DataType):
     def __init__(self, value):
-        super().__init__(TYPE_SCOPE, value)
+        super().__init__(TYPE_SCOPE, value, self.__class__.__name__)
         BuiltIn.func_assign(self.specials, Number.__name__, ["object"], [], Bool.Func_Cast_Number)
         BuiltIn.func_assign(self.specials, Bool.__name__, ["object"], [], Bool.Func_Cast_Bool)
         BuiltIn.func_assign(self.specials, String.__name__, ["object"], [], Bool.Func_Cast_String)
@@ -349,7 +339,7 @@ class Bool(DataType):
 
 class String(DataType):
     def __init__(self, scope, value):
-        super().__init__(scope, value)
+        super().__init__(scope, value, self.__class__.__name__)
         self.scope.assign("this", self)
 
         for b in String.bound:
@@ -443,7 +433,7 @@ class String(DataType):
 
 class Array(DataType):
     def __init__(self, scope, value):
-        super().__init__(scope, value)
+        super().__init__(scope, value, self.__class__.__name__)
         self.scope.assign("this", self)
         BuiltIn.func_assign(self.scope, "Append", ["value"], [], self.Func_Append)
 
@@ -542,14 +532,7 @@ class Instance(DataType):
         self.name = name
         self.parent = parent
         self.scope.assign("this", self)
-        BuiltIn.func_assign(self.scope, "ToString", [], [], Instance.Func_ToString)
         self.value = True
-
-
-    @staticmethod
-    def Func_ToString(_, scope):
-        self = scope.access("this")
-        return String(str(self))
 
 
     def __repr__(self):

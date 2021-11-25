@@ -141,7 +141,11 @@ class Interpreter:
                     instance = Instance(scope, identifier.name, identifier)
                 else:
                     instance = None
-                    scope = identifier.scope.copy()
+
+                    if context == None or context.get("built-in") == None:
+                        scope = identifier.scope.copy()
+                    else:
+                        scope = scope.copy()
 
                 for i, arg in enumerate(args):
                     parg = passed_args[i]
@@ -301,14 +305,17 @@ class Interpreter:
                 cast = scope.access(n.name)
 
                 if type(cast) != Class:
-                    self.runtime.report(KSCastException(f"cannot use type {type(n).__name__} for casting."), n.pos)
+                    self.runtime.report(KSCastException(f"cannot use type {cast.name} for casting."), n.pos)
 
                 value = self.visit(context, scope, n.value)
 
-                try:
+                if not cast.name in value.specials:
+                    self.runtime.report(KSCastException(f"cannot cast {value.name} to {cast.name}."), n.pos)
+
+                if type(value) == Instance:
+                    return BuiltIn.func_access(self, value.scope, value.specials.access(cast.name), [], [], n.pos)
+                else:
                     return BuiltIn.func_access(self, scope, value.specials.access(cast.name), [value], [], n.pos)
-                except:
-                    self.runtime.report(KSCastException(f"cannot cast {type(value).__name__} to {cast.name}."), n.pos)
 
             case n if isinstance(n, UnaryOperationNode):
                 right = self.visit(context, scope, n.right)
@@ -521,7 +528,8 @@ class Interpreter:
 
             case n if type(n) == SpecialFunctionNode:
                 instance = context["instance"]
-                print(instance.specials)
+                n.func.name = n.func.name.value
+                self.visit(context, instance.specials, n.func)
 
             case n if type(n) in (BuiltInFunctionNode, BuiltInClassNode):
                 return ReturnNode(n.expressions(self, scope))

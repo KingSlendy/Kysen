@@ -217,6 +217,50 @@ class TestLanguage(unittest.TestCase):
 
             Test2.Call();
         """), "Hello!")
+
+        self.assertEqual(language("""
+            class Test3() {
+                this.value2 = 1000;
+            }
+
+            class Test(value) : Test3() {
+                this.value = value;
+            }
+
+            class Test2() {
+                this.value = 1234;
+
+                cast Test() {
+                    return new Test(this.value);
+                }
+            }
+
+            t2 = new Test2();
+            t = <Test>t2;
+            t.value;
+        """), 1234)
+
+        self.assertEqual(language("""
+            class Test3() {
+                this.value2 = 1000;
+            }
+
+            class Test(value) : Test3() {
+                this.value = value;
+            }
+
+            class Test2() {
+                this.value = 1234;
+
+                cast Test() {
+                    return new Test(this.value);
+                }
+            }
+
+            t2 = new Test2();
+            t = <Test>t2;
+            t.value2;
+        """), 1000)
         
 
     def test_unary_operations(self):
@@ -659,3 +703,17 @@ class TestLanguage(unittest.TestCase):
 
         #with self.assertRaises(RuntimeException):
         #    language("a;")
+
+        with self.assertRaises(RuntimeException):
+            language("""
+                class Test() {
+
+                }
+
+                class Test2() {
+
+                }
+
+                t = new Test();
+                <Test2>t;
+            """)

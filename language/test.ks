@@ -1,17 +1,22 @@
+class Test(value) {
+    this.value = value;
 
-t = new Test2();
-
-class Test() {
-    static func Call() {
-        Console.Print("Hello!");
+    cast String() {
+        return this.value;
     }
 }
 
-class Test2() : Test() {
+class Test2() {
+    this.value = 1234;
 
+    cast Test() {
+        Console.Print(this.value);
+        return new Test(this.value);
+    }
 }
 
-Test2.Call();
+t = new Test(123);
+Console.Print(<String>t);
 
 #>
 for (i in [0, 1, 2, 3]) {
