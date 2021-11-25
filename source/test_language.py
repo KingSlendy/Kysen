@@ -695,16 +695,16 @@ class TestLanguage(unittest.TestCase):
 
 
     def test_errors(self):
-        with self.assertRaises(RuntimeException):
+        with self.assertRaisesRegex(RuntimeException, "SyntaxException: expected ';'."):
             language("3 + 2")
 
-        with self.assertRaises(RuntimeException):
+        with self.assertRaisesRegex(RuntimeException, "SyntaxException: unexpected syntax."):
             language("3+")
 
         #with self.assertRaises(RuntimeException):
         #    language("a;")
 
-        with self.assertRaises(RuntimeException):
+        with self.assertRaisesRegex(RuntimeException, "CastException: cannot cast type 'Test' to type 'Test2'."):
             language("""
                 class Test() {
 

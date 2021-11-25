@@ -208,11 +208,8 @@ class Interpreter:
             case n if type(n) == PropertyAccessNode:
                 identifier = self.visit(context, scope, n.node)
 
-                if type(identifier) not in (String, Array, Class, Instance):
-                    self.runtime.report(KSPropertyException(f"cannot check properties inside object of type {type(identifier).__name__}."), identifier.pos)
-
-                if type(identifier) in (String, Array):
-                    identifier.name = type(identifier).__name__
+                #if type(identifier) not in (String, Array, Class, Instance):
+                #    self.runtime.report(KSPropertyException(f"cannot check properties inside object of type '{identifier.name}'."), identifier.pos)
 
                 if type(n.property) == VarAssignNode:
                     if scope != identifier.scope and not n.property.name in identifier.scope:
@@ -305,12 +302,12 @@ class Interpreter:
                 cast = scope.access(n.name)
 
                 if type(cast) != Class:
-                    self.runtime.report(KSCastException(f"cannot use type {cast.name} for casting."), n.pos)
+                    self.runtime.report(KSCastException(f"'{n.name}' must be a class."), n.pos)
 
                 value = self.visit(context, scope, n.value)
 
                 if not cast.name in value.specials:
-                    self.runtime.report(KSCastException(f"cannot cast {value.name} to {cast.name}."), n.pos)
+                    self.runtime.report(KSCastException(f"cannot cast type '{value.name}' to type '{cast.name}'."), n.pos)
 
                 if type(value) == Instance:
                     return BuiltIn.func_access(self, value.scope, value.specials.access(cast.name), [], [], n.pos)

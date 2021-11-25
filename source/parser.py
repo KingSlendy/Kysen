@@ -109,6 +109,12 @@ class Parser:
 
         return token
 
+    
+    def token_advance(self):
+        token = self.current
+        self.advance()
+        return token
+
 
     def necessary_token_advance(self, type):
         token = self.necessary_token_check(type)
@@ -150,8 +156,7 @@ class Parser:
                 return expression
 
             case TOKENS.LBRACKET:
-                token = self.current
-                self.advance()
+                token = self.token_advance()
                 values = []
 
                 while self.current.type != TOKENS.RBRACKET:
@@ -169,8 +174,7 @@ class Parser:
                 return node
 
             case TOKENS.LESS:
-                token = self.current
-                self.advance()
+                token = self.token_advance()
                 name = self.necessary_token_advance(TOKENS.IDENTIFIER).value
                 self.necessary_token_advance(TOKENS.GREATER)
                 value = self.parse_factor()
@@ -179,8 +183,7 @@ class Parser:
             case TOKENS.KEYWORD:
                 match self.current.value:
                     case KEYWORDS.TRUE | KEYWORDS.FALSE:
-                        token = self.current
-                        self.advance()
+                        token = self.token_advance()
                         return BOOL_NODES[0 if token.value.value == "false" else 1].set_pos(token.pos)
 
                     case KEYWORDS.NULL:
@@ -197,13 +200,11 @@ class Parser:
                         return self.parse_while_statement()
 
                     case KEYWORDS.CONTINUE:
-                        token = self.current
-                        self.advance()
+                        token = self.token_advance()
                         return CONTINUE_NODE.set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
                     
                     case KEYWORDS.BREAK:
-                        token = self.current
-                        self.advance()
+                        token = self.token_advance()
                         expression = NUMBER_NODES[1 + 255]
 
                         if self.current.type != TOKENS.SEMICOLON:
@@ -215,8 +216,7 @@ class Parser:
                         return self.parse_function_statement()
 
                     case KEYWORDS.RETURN:
-                        token = self.current
-                        self.advance()
+                        token = self.token_advance()
                         expression = None
 
                         if self.current.type != TOKENS.SEMICOLON:
@@ -228,13 +228,11 @@ class Parser:
                         return self.parse_class_statement()
 
                     case KEYWORDS.STATIC:
-                        token = self.current
-                        self.advance()
+                        token = self.token_advance()
                         return StaticNode(self.parse_binary_expression()).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
 
                     case KEYWORDS.NEW:
-                        token = self.current
-                        self.advance()
+                        token = self.token_advance()
                         self.necessary_token_check(TOKENS.IDENTIFIER)
                         factor = self.parse_factor()
                         return ClassAccessNode(factor.node, factor.args).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
@@ -283,15 +281,13 @@ class Parser:
                 return node
 
             case t if t in (TOKENS.ADD, TOKENS.SUBT, TOKENS.NOT, TOKENS.BITNOT):
-                token = self.current
-                self.advance()
+                token = self.token_advance()
                 factor = self.parse_factor()
                 operation_node = UNARY_OPERATOR_NODES[token.type]
                 return operation_node(factor).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
 
             case t if t in (TOKENS.INT, TOKENS.FLOAT):
-                token = self.current
-                self.advance()
+                token = self.token_advance()
 
                 if token.value + 255 in NUMBER_NODES:
                     return NUMBER_NODES[token.value + 255]
@@ -299,8 +295,7 @@ class Parser:
                 return NumberNode(token.value).set_pos(token.pos)
 
             case TOKENS.STRING:
-                token = self.current
-                self.advance()
+                token = self.token_advance()
                 return StringNode(token.value).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
 
             case _:
@@ -408,8 +403,7 @@ class Parser:
                 self.necessary_token_advance(TOKENS.RCURLY)
 
             case TOKENS.ARROW:
-                token = self.current
-                self.advance()
+                token = self.token_advance()
                 expressions = self.parse_expressions(once = True)
                 expressions.expressions[0] = ReturnNode(expressions.expressions[0]).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
             
@@ -435,8 +429,7 @@ class Parser:
 
 
     def parse_for_statement(self):
-        token = self.current
-        self.advance()
+        token = self.token_advance()
         self.ignore_token_advance(TOKENS.LPAREN)
         identifier = self.parse_binary_expression()
         self.necessary_keyword_advance(KEYWORDS.IN)
@@ -454,8 +447,7 @@ class Parser:
 
 
     def parse_function_statement(self, special = False):
-        token = self.current
-        self.advance()
+        token = self.token_advance()
         name = None
         bound_name = None
 
@@ -469,8 +461,7 @@ class Parser:
                 bound_name = name
                 name = self.necessary_token_advance(TOKENS.IDENTIFIER).value
         else:
-            name = self.current
-            self.advance()
+            name = self.token_advance()
 
         args = []
         self.parse_arguments(args)
@@ -479,8 +470,7 @@ class Parser:
 
     
     def parse_class_statement(self):
-        token = self.current
-        self.advance()
+        token = self.token_advance()
         name = self.necessary_token_advance(TOKENS.IDENTIFIER).value
         args = []
         self.parse_arguments(args)
@@ -555,8 +545,7 @@ class Parser:
         left = self.parse_factor()
 
         while (operator_priority := binary_operator_priority(self.current)) > priority and operator_priority != -1:
-            operator = self.current
-            self.advance()
+            operator = self.token_advance()
             right = self.parse_binary_expression(operator_priority)
             operation_node = BINARY_OPERATOR_NODES[operator.type]
             left = operation_node(left, right).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
