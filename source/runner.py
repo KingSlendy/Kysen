@@ -11,7 +11,7 @@ class Runner:
 
         runtime = Runtime(filename, text)
         lexer = Lexer(text, runtime)
-        #print(lexer.tokens)
+        print(lexer.tokens)
 
         if len(lexer.tokens) == 1:
             return None

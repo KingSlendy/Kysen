@@ -132,6 +132,16 @@ class TestLanguage(unittest.TestCase):
             a[0][0];
         """), 100)
 
+        self.assertEqual(language("""
+            func Test(array) {
+                array[0] = 100;
+            }
+
+            a = [0, 1, 2, 3, 4];
+            Test(a);
+            a[0];
+        """), 100)
+
 
     def test_classes(self):
         self.assertEqual(language("""
@@ -701,8 +711,8 @@ class TestLanguage(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeException, "SyntaxException: unexpected syntax."):
             language("3+")
 
-        #with self.assertRaises(RuntimeException):
-        #    language("a;")
+        with self.assertRaisesRegex(RuntimeException, "VariableException: 'a' not declared in current scope."):
+            language("a;")
 
         with self.assertRaisesRegex(RuntimeException, "CastException: cannot cast type 'Test' to type 'Test2'."):
             language("""

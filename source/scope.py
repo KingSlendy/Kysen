@@ -9,12 +9,14 @@ class Scope:
         return value
 
 
-    def access(self, key):
+    def access(self, key, interpreter = None, pos = None):
         if key not in self.table:
             if self.parent != None:
                 return self.parent.access(key)
             else:
-                raise Exception(f"Variable '{key}' not declared in current scope.")
+                from exceptions import KSVariableException
+                interpreter.runtime.report(KSVariableException(f"'{key}' not declared in current scope."), pos)
+                #raise Exception(f"Variable '{key}' not declared in current scope.")
 
         return self.table[key]
 
@@ -62,3 +64,7 @@ class Scope:
 
     def __repr__(self):
         return str(self.table)
+
+
+class Context:
+    pass

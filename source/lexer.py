@@ -228,13 +228,13 @@ class Lexer:
                     self.advance()
 
                 case "%":
-                    self.register_token(self.make_binary_token(None, TOKENS.MOD, None))
+                    self.register_token(self.make_binary_token("  ", TOKENS.MOD, "  "))
 
                 case "+":
-                    self.register_token(self.make_binary_token(None, TOKENS.ADD, None))
+                    self.register_token(self.make_binary_token("  ", TOKENS.ADD, "  "))
 
                 case "-":
-                    self.register_token(self.make_binary_token(None, TOKENS.SUBT, None))
+                    self.register_token(self.make_binary_token("  ", TOKENS.SUBT, "  "))
 
                 case "<":
                     self.register_token(self.make_lessgreater_token(TOKENS.LESS, TOKENS.LSHIFT, TOKENS.LESSEQUALS))

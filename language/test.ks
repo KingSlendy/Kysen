@@ -1,3 +1,4 @@
+#>
 class Test(value) {
     this.value = value;
 
@@ -17,6 +18,7 @@ class Test2() {
 
 t = new Test(123);
 Console.Print(<String>t);
+<#
 
 #>
 for (i in [0, 1, 2, 3]) {

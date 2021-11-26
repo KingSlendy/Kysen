@@ -53,13 +53,13 @@ class Interpreter:
                 #    raise Exception(f"Cannot assign a non-Type value to variable '{n.name}'.")
 
                 if n.name in scope:
-                    attribute = scope.access(n.name)
+                    attribute = scope.access(n.name, self, n.pos)
 
                     if type(attribute) == Attribute:
                         last_value = None
 
                         if "value" in scope:
-                            last_value = scope.access("value")
+                            last_value = scope.access("value", self, n.pos)
 
                         scope.assign("value", value)
                         value = self.visit(context, scope, attribute.assign_expressions)
@@ -74,7 +74,7 @@ class Interpreter:
                 return scope.assign(n.name, value)
 
             case n if type(n) == VarAccessNode:
-                value = scope.access(n.name)
+                value = scope.access(n.name, self, n.pos)
 
                 if type(value) == Attribute:
                     attribute = value
@@ -248,7 +248,7 @@ class Interpreter:
                                 try:
                                     globals()[n.bound].bound.append(n)
                                 except KeyError:
-                                    bind = scope.access(n.bound)
+                                    bind = scope.access(n.bound, self, n.pos)
                                     bind.expressions.insert(0, n)
 
                                 n.bound = None
@@ -258,7 +258,7 @@ class Interpreter:
                             object = Class(scope.copy(), n.name, n.args, n.expressions, n.inherit).set_pos(n.pos)
                             
                             if n.inherit != None:
-                                parent = scope.access(n.inherit.node.name)
+                                parent = scope.access(n.inherit.node.name, self, n.pos)
                                 parent.scope.transfer(object.scope)
 
                             statics = []
@@ -299,7 +299,7 @@ class Interpreter:
                         return cast_type(n.value).set_pos(n.pos)
 
             case n if type(n) == CastNode:
-                cast = scope.access(n.name)
+                cast = scope.access(n.name, self, n.pos)
 
                 if type(cast) != Class:
                     self.runtime.report(KSCastException(f"'{n.name}' must be a class."), n.pos)
@@ -515,7 +515,7 @@ class Interpreter:
                     raise Exception("Cannot use 'static' outside of a class definition.")
                 
                 node = self.visit(context, scope, n.node)
-                scope.access(n.node.name).static = True
+                scope.access(n.node.name, self, n.pos).static = True
 
                 for e in n.node.expressions:
                     if type(e) != StaticNode:
