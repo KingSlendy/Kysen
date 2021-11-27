@@ -1,12 +1,18 @@
 from datatypes import *
+from exceptions import *
+from nodes import *
 from time import time
 
 def Class_Console(_, scope):
     pass
 
 
-def Class_Console_Func_Print(_, scope):
+def Class_Console_Func_Print(interpreter, scope):
     value = scope.access("value")
+
+    if type(value) == Instance and "String" in value.specials:
+        value = interpreter.visit(None, scope, CastNode("String", value.set_pos(None)).set_pos(None))
+        
     print(value)
 
 
@@ -24,13 +30,10 @@ def Func_Range(_, scope):
         start = NumberCache(0)
 
     if step.value == 0:
-        raise Exception("'step' argument must be non-zero.")
+        from runner import runtime
+        runtime.report(KSArgumentException("'step' argument must be non-zero."))
     
-    r = list(range(start.value, finish.value, step.value))
-
-    for i, n in enumerate(r):
-        r[i] = NumberCache(n)
-
+    r = [NumberCache(n) for n in range(start.value, finish.value, step.value)]
     return Array(scope.copy(), r).set_pos(None)
 
 

@@ -10,7 +10,9 @@ VALID_IDENTIFIER = LETTERS_DIGITS + "_"
 WHITESPACE = string.whitespace
 
 class Lexer:
-    def __init__(self, text, runtime):
+    def __init__(self, text):
+        from runner import runtime
+
         self.text = text
         self.runtime = runtime
         self.position = -1

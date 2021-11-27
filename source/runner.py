@@ -3,22 +3,26 @@ from lexer import Lexer
 from parser import Parser
 from runtime import Runtime
 
+runtime = Runtime()
+
 class Runner:
     @staticmethod
     def execute(filename, text):
+        global runtime
+
         if text == "":
             return None
 
-        runtime = Runtime(filename, text)
-        lexer = Lexer(text, runtime)
-        print(lexer.tokens)
+        runtime.update(filename, text)
+        lexer = Lexer(text)
+        #print(lexer.tokens)
 
         if len(lexer.tokens) == 1:
             return None
 
-        parser = Parser(lexer.tokens, runtime)
+        parser = Parser(lexer.tokens)
         #print(parser.tree)
-        interpreter = Interpreter(parser.tree, runtime)
+        interpreter = Interpreter(parser.tree)
 
         if len(interpreter.result) == 1:
             result = interpreter.result[0]

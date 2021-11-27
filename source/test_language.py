@@ -4,20 +4,21 @@ from exceptions import RuntimeException
 from interpreter import Interpreter
 from lexer import Lexer
 from parser import Parser
-from runtime import Runtime
 
 def language(text):
+    from runner import runtime
+
     if text == "":
         return None
 
-    runtime = Runtime("<unittest>", text, unittest = True)
-    lexer = Lexer(text, runtime)
+    runtime.update("<unittest>", text, unittest = True)
+    lexer = Lexer(text)
 
     if len(lexer.tokens) == 1:
         return None
 
-    parser = Parser(lexer.tokens, runtime)
-    interpreter = Interpreter(parser.tree, runtime)
+    parser = Parser(lexer.tokens)
+    interpreter = Interpreter(parser.tree)
 
     return interpreter.result[-1].value
 
@@ -271,6 +272,82 @@ class TestLanguage(unittest.TestCase):
             t = <Test>t2;
             t.value2;
         """), 1000)
+
+        self.assertEqual(language("""
+            class Test() {
+                this.value = 1000;
+
+                cast Number() {
+                    return this.value;
+                }
+
+                cast String() {
+                    return <String>this.value;
+                }
+            }
+
+            t = new Test();
+            t2 = <Test>t;
+            t2.value = 254;
+            <String>t;
+        """), "1000")
+
+        self.assertEqual(language("""
+            class Test() {
+                this.value = 1000;
+
+                cast Number() {
+                    return this.value;
+                }
+
+                cast String() {
+                    return <String>this.value;
+                }
+            }
+
+            t = new Test();
+            t2 = <Test>t;
+            t2.value = 254;
+            <String>t2;
+        """), "254")
+
+        self.assertEqual(language("""
+            class Test() {
+                this.value = 1000;
+
+                cast Number() {
+                    return this.value;
+                }
+
+                cast String() {
+                    return <String>this.value;
+                }
+            }
+
+            t = new Test();
+            t2 = <Test>t;
+            t2.value = 254;
+            <Number>t;
+        """), 1000)
+
+        self.assertEqual(language("""
+            class Test() {
+                this.value = 1000;
+
+                cast Number() {
+                    return this.value;
+                }
+
+                cast String() {
+                    return <String>this.value;
+                }
+            }
+
+            t = new Test();
+            t2 = <Test>t;
+            t2.value = 254;
+            <Number>t2;
+        """), 254)
         
 
     def test_unary_operations(self):
@@ -726,4 +803,11 @@ class TestLanguage(unittest.TestCase):
 
                 t = new Test();
                 <Test2>t;
+            """)
+
+        with self.assertRaisesRegex(RuntimeException, "StaticException: static classes can't have non-static properties."):
+            language("""
+                static class Test() {
+                    a = 10;
+                }
             """)

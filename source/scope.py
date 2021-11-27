@@ -9,14 +9,14 @@ class Scope:
         return value
 
 
-    def access(self, key, interpreter = None, pos = None):
+    def access(self, key):
         if key not in self.table:
             if self.parent != None:
                 return self.parent.access(key)
             else:
                 from exceptions import KSVariableException
-                interpreter.runtime.report(KSVariableException(f"'{key}' not declared in current scope."), pos)
-                #raise Exception(f"Variable '{key}' not declared in current scope.")
+                from runner import runtime
+                runtime.report(KSVariableException(f"'{key}' not declared in current scope."))
 
         return self.table[key]
 
@@ -32,6 +32,13 @@ class Scope:
 
     def copy(self):
         return Scope(self)
+
+
+    def clone(self):
+        scope = Scope()
+        scope.table = dict(self.table)
+        scope.parent = self.parent
+        return scope
 
 
     def transfer(self, scope):

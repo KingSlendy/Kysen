@@ -46,3 +46,6 @@ class KSCastException(KSException):
 
 class KSVariableException(KSException):
     pass
+
+class KSStaticException(KSException):
+    pass

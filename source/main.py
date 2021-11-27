@@ -15,7 +15,7 @@ def run(filename, text):
 def main():
     if len(sys.argv) >= 2:
         filename = sys.argv[1]
-        run(filename.split("\\")[-1], open(filename, "r").read())
+        run(filename, open(filename, "r").read())
         return
 
     while True:

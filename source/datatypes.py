@@ -28,6 +28,7 @@ class DataType:
 class Number(DataType):
     def __init__(self, value):
         super().__init__(TYPE_SCOPE, value, self.__class__.__name__)
+        self.pos = None
         BuiltIn.func_assign(self.specials, Number.__name__, ["object"], [], Number.Func_Cast_Number)
         BuiltIn.func_assign(self.specials, Bool.__name__, ["object"], [], Number.Func_Cast_Bool)
         BuiltIn.func_assign(self.specials, String.__name__, ["object"], [], Number.Func_Cast_String)
@@ -48,7 +49,7 @@ class Number(DataType):
     @staticmethod
     def Func_Cast_String(_, scope):
         object = scope.access("object")
-        return String(scope.copy(), str(object.value))
+        return String(scope.copy(), str(object.value)).set_pos(object.pos)
 
 
     @staticmethod
@@ -286,6 +287,7 @@ class Number(DataType):
 class Bool(DataType):
     def __init__(self, value):
         super().__init__(TYPE_SCOPE, value, self.__class__.__name__)
+        self.pos = None
         BuiltIn.func_assign(self.specials, Number.__name__, ["object"], [], Bool.Func_Cast_Number)
         BuiltIn.func_assign(self.specials, Bool.__name__, ["object"], [], Bool.Func_Cast_Bool)
         BuiltIn.func_assign(self.specials, String.__name__, ["object"], [], Bool.Func_Cast_String)
@@ -306,7 +308,7 @@ class Bool(DataType):
     @staticmethod
     def Func_Cast_String(_, scope):
         object = scope.access("object")
-        return String(scope.copy(), str(object.value))
+        return String(scope.copy(), str(object.value)).set_pos(object.pos)
 
 
     @staticmethod
@@ -532,7 +534,19 @@ class Instance(DataType):
         self.name = name
         self.parent = parent
         self.scope.assign("this", self)
-        self.value = True
+        BuiltIn.func_assign(self.specials, self.name, [], [], Instance.Func_Cast_Self)
+
+
+    @staticmethod
+    def Func_Cast_Self(_, scope):
+        self = scope.access("this")
+        return self.copy()
+
+    
+    def copy(self):
+        instance = Instance(self.scope.clone(), self.name, self.parent).set_pos(self.pos)
+        instance.specials = self.specials
+        return instance
 
 
     def __repr__(self):
@@ -598,7 +612,7 @@ class BuiltIn:
         for kw in kw_args:
             total_args.append(KeywordArgumentNode(kw[0], kw[1]))
 
-        scope.assign(func_name, Function(scope.copy(), func_name, total_args, ExpressionsNode([BuiltInFunctionNode(func)])).set_pos(None))
+        scope.assign(func_name, Function(scope.copy(), func_name, total_args, ExpressionsNode([BuiltInFunctionNode(func).set_pos(None)]).set_pos(None)).set_pos(None))
 
 
     @staticmethod
@@ -611,7 +625,7 @@ class BuiltIn:
         for kw in kw_args:
             total_args.append(KeywordArgumentNode(kw[0], kw[1]))
 
-        scope.assign(class_name, Class(scope.copy(), class_name, total_args, ExpressionsNode([BuiltInClassNode(func)]), None).set_pos(None))
+        scope.assign(class_name, Class(scope.copy(), class_name, total_args, ExpressionsNode([BuiltInClassNode(func).set_pos(None)]).set_pos(None), None).set_pos(None))
 
 
     @staticmethod

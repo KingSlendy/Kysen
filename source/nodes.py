@@ -383,7 +383,7 @@ class BuiltInFunctionNode(Node):
 
 
     def __repr__(self):
-        return f"BUILTIN FUNC: {self.expression}"
+        return f"BUILTIN FUNC: {self.expressions}"
 
 
 class BuiltInClassNode(Node):
@@ -404,6 +404,13 @@ class ExpressionsNode(Node):
         self.expressions.insert(index, value)
 
 
+    def __getitem__(self, index):
+        if index < len(self.expressions):
+            return self.expressions[index]
+        
+        return None
+
+
     def __delitem__(self, index):
         del self.expressions[index]
 
@@ -416,8 +423,8 @@ class ExpressionsNode(Node):
         return f"EXPRS: ({self.expressions})"
 
 
-NUMBER_NODES = [NumberNode(n) for n in range(-255, 256)]
-BOOL_NODES = [BoolNode(False), BoolNode(True)]
-NULL_NODE = NullNode()
+NUMBER_NODES = [NumberNode(n).set_pos(None) for n in range(-255, 256)]
+BOOL_NODES = [BoolNode(False).set_pos(None), BoolNode(True).set_pos(None)]
+NULL_NODE = NullNode().set_pos(None)
 
 CONTINUE_NODE = ContinueNode()
