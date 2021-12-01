@@ -11,19 +11,19 @@ last_scope = None
 
 class Interpreter:
     def __init__(self, tree):
-        from runner import runtime
+        from runner import reporter
 
         self.tree = tree
-        self.runtime = runtime
+        self.reporter = reporter
         self.result = None
         self.run()
 
     
-    def visit(self, context, scope, node) -> Node:
+    def visit(self, context: dict, scope: Scope, node: Node) -> Node:
         global last_scope
 
         if node.pos != None:
-            self.runtime.pos = node.pos
+            self.reporter.pos = node.pos
 
         match node:
             case n if type(n) == ExpressionsNode:
@@ -92,7 +92,7 @@ class Interpreter:
 
                 return value
 
-            case n if type(n) == AccessorNode:
+            case n if type(n) == BracketAccessNode:
                 context = None
                 identifier = self.visit(context, scope, n.node)
 
@@ -106,7 +106,7 @@ class Interpreter:
                 index_expression = self.visit(context, scope, n.index_expression)
                 return identifier[index_expression]
 
-            case n if type(n) == AssignerNode:
+            case n if type(n) == BracketAssignNode:
                 identifier = self.visit(context, scope, n.node)
                 index_expression = self.visit(context, scope, n.index_expression)
                 value_expression = self.visit(context, scope, n.value_expression)
@@ -122,13 +122,13 @@ class Interpreter:
                     last_scope = None
 
                 if type(n) == FunctionAccessNode and type(identifier) != Function:
-                    self.runtime.report(KSTypeException(f"'{type(identifier).__name__}' type is not callable."))
+                    self.reporter.report(KSTypeException(f"'{type(identifier).__name__}' type is not callable."))
 
                 if type(n) == ClassAccessNode and type(identifier) != Class:
-                    self.runtime.report(KSTypeException(f"'{type(identifier).__name__}' type cannot be instantiated."))
+                    self.reporter.report(KSTypeException(f"'{type(identifier).__name__}' type cannot be instantiated."))
 
                 if type(identifier) == Class and identifier.static:
-                    self.runtime.report(KSTypeException(f"cannot instantiate static class '{identifier.name}'."))
+                    self.reporter.report(KSTypeException(f"cannot instantiate static class '{identifier.name}'."))
 
                 args = [x for x in identifier.args if type(x) == ArgumentNode]
                 kw_args = [x for x in identifier.args if type(x) == KeywordArgumentNode]
@@ -137,26 +137,26 @@ class Interpreter:
                 passed_arg_number = len(passed_args)
 
                 if passed_arg_number < len(args):
-                    self.runtime.report(KSArgumentException(f"expected '{len(args)}' positional argument(s), got '{passed_arg_number}'."))
+                    self.reporter.report(KSArgumentException(f"expected '{len(args)}' positional argument(s), got '{passed_arg_number}'."))
                 elif passed_arg_number > arg_number:
-                    self.runtime.report(KSArgumentException(f"expected '{arg_number}' total argument(s), got '{passed_arg_number}'."))
+                    self.reporter.report(KSArgumentException(f"expected '{arg_number}' total argument(s), got '{passed_arg_number}'."))
 
                 if type(identifier) == Class:
-                    scope = scope.copy()
+                    scope = scope.inherit()
                     instance = Instance(scope, identifier.name, identifier).set_pos(n.pos)
                 else:
                     instance = None
 
                     if context == None or context.get("built-in") == None:
-                        scope = identifier.scope.copy()
+                        scope = identifier.scope.inherit()
                     else:
-                        scope = scope.copy()
+                        scope = scope.inherit()
 
                 for i, arg in enumerate(args):
                     parg = passed_args[i]
 
                     if type(parg) == KeywordArgumentNode:
-                        self.runtime.report(KSArgumentException(f"expected positional argument '{arg.expression.name}'."))
+                        self.reporter.report(KSArgumentException(f"expected positional argument '{arg.expression.name}'."))
 
                     scope.assign(arg.expression.name, self.visit(context, old_scope, parg.expression))
 
@@ -171,7 +171,7 @@ class Interpreter:
                         declared_kw_arguments.append(kw_arg.name)
                     elif type(pkw_arg) == KeywordArgumentNode:
                         if pkw_arg.name in declared_kw_arguments:
-                            self.runtime.report(KSArgumentException(f"already declared argument '{pkw_arg.name}'."))
+                            self.reporter.report(KSArgumentException(f"already declared argument '{pkw_arg.name}'."))
 
                         scope.assign(pkw_arg.name, self.visit(context, old_scope, pkw_arg.expression))
                         declared_kw_arguments.append(pkw_arg.name)
@@ -187,8 +187,8 @@ class Interpreter:
                         scope.assign("base", base)
 
                 if context == None and type(identifier.expressions[0]) != BuiltInFunctionNode:
-                    self.runtime.push(self.runtime.place)
-                    self.runtime.place = identifier.name
+                    self.reporter.push(self.reporter.place)
+                    self.reporter.place = identifier.name
 
                 # Visit all the Function/Class expressions.
                 value = self.visit({"instance": instance}, scope, identifier.expressions)
@@ -205,7 +205,7 @@ class Interpreter:
                     return value.copy()
 
                 if context == None:
-                    self.runtime.pop()
+                    self.reporter.pop()
                 
                 context = None
                 return instance if instance != None else NULL_TYPE
@@ -214,11 +214,11 @@ class Interpreter:
                 identifier = self.visit(context, scope, n.node)
 
                 #if type(identifier) not in (String, Array, Class, Instance):
-                #    self.runtime.report(KSPropertyException(f"cannot check properties inside object of type '{identifier.name}'."), identifier.pos)
+                #    self.reporter.report(KSPropertyException(f"cannot check properties inside object of type '{identifier.name}'."), identifier.pos)
 
                 if type(n.property) == VarAssignNode:
                     if scope != identifier.scope and not n.property.name in identifier.scope:
-                        self.runtime.report(KSPropertyException(f"cannot assign uninitialized property '{n.property.name}' in '{identifier.name}'."))
+                        self.reporter.report(KSPropertyException(f"cannot assign uninitialized property '{n.property.name}' in '{identifier.name}'."))
 
                 check_property = n.property
 
@@ -226,7 +226,7 @@ class Interpreter:
                     check_property = check_property.node
 
                 if (n.node.name != "this" or type(check_property) == VarAccessNode) and check_property.name not in identifier.scope:
-                    self.runtime.report(KSPropertyException(f"{'Instance of type ' if type(identifier) == Instance else 'Class '}'{identifier.name}' has no property '{check_property.name}'."))
+                    self.reporter.report(KSPropertyException(f"{'Instance of type ' if type(identifier) == Instance else 'Class '}'{identifier.name}' has no property '{check_property.name}'."))
 
                 if last_scope == None:
                     last_scope = scope
@@ -237,13 +237,13 @@ class Interpreter:
             case n if isinstance(n, DataTypeNode):
                 match n:
                     case _ if type(n) == StringNode:
-                        return String(scope.copy(), n.value).set_pos(n.pos)
+                        return String(scope.inherit(), n.value).set_pos(n.pos)
 
                     case _ if type(n) == ArrayNode:
                         for i, v in enumerate(n.value):
                             n.value[i] = self.visit(context, scope, v)
 
-                        return Array(scope.copy(), n.value).set_pos(n.pos)
+                        return Array(scope.inherit(), n.value).set_pos(n.pos)
 
                     case _ if type(n) in (FunctionNode, ClassNode):
                         object = None
@@ -260,7 +260,7 @@ class Interpreter:
                             else:
                                 object = Function(scope, n.name, n.args, n.expressions).set_pos(n.pos)
                         elif type(n) == ClassNode:
-                            object = Class(scope.copy(), n.name, n.args, n.expressions, n.inherit).set_pos(n.pos)
+                            object = Class(scope.inherit(), n.name, n.args, n.expressions, n.inherit).set_pos(n.pos)
                             
                             if n.inherit != None:
                                 parent = scope.access(n.inherit.node.name)
@@ -307,17 +307,17 @@ class Interpreter:
                 cast = scope.access(n.name)
 
                 if type(cast) != Class:
-                    self.runtime.report(KSCastException(f"'{n.name}' must be a class."))
+                    self.reporter.report(KSCastException(f"'{n.name}' must be a class."))
 
                 value = self.visit(context, scope, n.value)
 
                 if not cast.name in value.specials:
-                    self.runtime.report(KSCastException(f"cannot cast type '{value.name}' to type '{cast.name}'."))
+                    self.reporter.report(KSCastException(f"cannot cast type '{value.name}' to type '{cast.name}'."))
 
                 if type(value) == Instance:
-                    return BuiltIn.func_access(self, value.scope, value.specials.access(cast.name), [], [], self.runtime.pos)
+                    return BuiltIn.func_access(self, value.scope, value.specials.access(cast.name), [], [], self.reporter.pos)
                 else:
-                    return BuiltIn.func_access(self, scope, value.specials.access(cast.name), [value], [], self.runtime.pos)
+                    return BuiltIn.func_access(self, scope, value.specials.access(cast.name), [value], [], self.reporter.pos)
 
             case n if isinstance(n, UnaryOperationNode):
                 right = self.visit(context, scope, n.right)
@@ -348,55 +348,55 @@ class Interpreter:
                         try:
                             return left ** right
                         except:
-                            self.runtime.report(KSBinaryOperationException("**", type(left), type(right)))
+                            self.reporter.report(KSBinaryOperationException("**", type(left), type(right)))
 
                     case _ if type(n) == MultiplicationNode:
                         try:
                             return left * right
                         except:
-                            self.runtime.report(KSBinaryOperationException("*", type(left), type(right)))
+                            self.reporter.report(KSBinaryOperationException("*", type(left), type(right)))
                     
                     case _ if type(n) == DivitionNode:
                         try:
                             return left / right
                         except:
-                            self.runtime.report(KSBinaryOperationException("/", type(left), type(right)))
+                            self.reporter.report(KSBinaryOperationException("/", type(left), type(right)))
 
                     case _ if type(n) == FlooringDivitionNode:
                         try:
                             return left // right
                         except:
-                            self.runtime.report(KSBinaryOperationException("\\", type(left), type(right)))
+                            self.reporter.report(KSBinaryOperationException("\\", type(left), type(right)))
 
                     case _ if type(n) == ModNode:
                         try:
                             return left % right
                         except:
-                            self.runtime.report(KSBinaryOperationException("%", type(left), type(right)))
+                            self.reporter.report(KSBinaryOperationException("%", type(left), type(right)))
 
                     case _ if type(n) == AdditionNode:
                         try:
                             return left + right
                         except:
-                            self.runtime.report(KSBinaryOperationException("+", type(left), type(right)))
+                            self.reporter.report(KSBinaryOperationException("+", type(left), type(right)))
 
                     case _ if type(n) == SubtractionNode:
                         try:
                             return left - right
                         except:
-                            self.runtime.report(KSBinaryOperationException("-", type(left), type(right)))
+                            self.reporter.report(KSBinaryOperationException("-", type(left), type(right)))
 
                     case _ if type(n) == LShiftNode:
                         try:
                             return left << right
                         except:
-                            self.runtime.report(KSBinaryOperationException("<<", type(left), type(right)))
+                            self.reporter.report(KSBinaryOperationException("<<", type(left), type(right)))
 
                     case _ if type(n) == RShiftNode:
                         try:
                             return left >> right
                         except:
-                            self.runtime.report(KSBinaryOperationException(">>", type(left), type(right)))
+                            self.reporter.report(KSBinaryOperationException(">>", type(left), type(right)))
 
                     case _ if type(n) == LessThanNode:
                         return left < right
@@ -420,19 +420,19 @@ class Interpreter:
                         try:
                             return left & right
                         except:
-                            self.runtime.report(KSBinaryOperationException("&", type(left), type(right)))
+                            self.reporter.report(KSBinaryOperationException("&", type(left), type(right)))
 
                     case _ if type(n) == BitOrNode:
                         try:
                             return left | right
                         except:
-                            self.runtime.report(KSBinaryOperationException("|", type(left), type(right)))
+                            self.reporter.report(KSBinaryOperationException("|", type(left), type(right)))
 
                     case _ if type(n) == BitXorNode:
                         try:
                             return left ^ right
                         except:
-                            self.runtime.report(KSBinaryOperationException("^", type(left), type(right)))
+                            self.reporter.report(KSBinaryOperationException("^", type(left), type(right)))
 
                     case _ if type(n) == AndNode:
                         if (type(left) == Bool and left.value) and (type(right) == Bool and right.value):
@@ -460,8 +460,8 @@ class Interpreter:
                 iterable = self.visit(context, scope, n.iterable)
 
                 for x in iterable:
-                    if type(x) == str:
-                        x = String(scope.copy(), x).set_pos(None)
+                    if type(x) == int:
+                        x = NumberCache(x)
 
                     scope.assign(n.identifier, x)
                     value = self.visit(context, scope, n.expressions)
@@ -510,22 +510,22 @@ class Interpreter:
                 value = self.visit(context, scope, n.expression)
 
                 if type(value) != Number:
-                    self.runtime.report(KSTypeException(f"expected type 'Number' but got type '{value.name}'."))
+                    self.reporter.report(KSTypeException(f"expected type 'Number' but got type '{value.name}'."))
 
                 value = Number(value.value)
                 return BreakNode(value).set_pos(n.pos)
 
             case n if type(n) == StaticNode:
                 if type(n.node) != ClassNode:
-                    self.runtime.report(KSStaticException("cannot use 'static' outside of a class definition."))
+                    self.reporter.report(KSStaticException("cannot use 'static' outside of a class definition."))
                 
                 node = self.visit(context, scope, n.node)
                 scope.access(n.node.name).static = True
 
                 for e in n.node.expressions:
                     if type(e) != StaticNode:
-                        self.runtime.pos = e.pos
-                        self.runtime.report(KSStaticException("static classes can't have non-static properties."))
+                        self.reporter.pos = e.pos
+                        self.reporter.report(KSStaticException("static classes can't have non-static properties."))
 
                 return node
 
@@ -543,7 +543,7 @@ class Interpreter:
     def run(self):
         global global_scope, last_scope
 
-        if self.runtime.unittest:
+        if self.reporter.unittest:
             global_scope.clear()
             builtin_add_all(global_scope)
             last_scope = None
@@ -552,13 +552,13 @@ class Interpreter:
 
         match self.result:
             case r if type(r) == ReturnNode:
-                #self.runtime.pos = r.pos
-                self.runtime.report(KSSyntaxException("cannot use 'return' statement outside of a function context."))
+                #self.reporter.pos = r.pos
+                self.reporter.report(KSSyntaxException("cannot use 'return' statement outside of a function context."))
 
             case r if type(r) == ContinueNode:
-                #self.runtime.pos = r.pos
-                self.runtime.report(KSSyntaxException("cannot use 'continue' statement outside of a loop context."))
+                #self.reporter.pos = r.pos
+                self.reporter.report(KSSyntaxException("cannot use 'continue' statement outside of a loop context."))
 
             case r if type(r) == BreakNode:
-                #self.runtime.pos = r.pos
-                self.runtime.report(KSSyntaxException("cannot use 'break' statement outside of a loop context."))
+                #self.reporter.pos = r.pos
+                self.reporter.report(KSSyntaxException("cannot use 'break' statement outside of a loop context."))

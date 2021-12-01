@@ -1,5 +1,5 @@
 from enum import Enum
-from runtime import Position
+from reporter import Position
 
 class TOKENS(Enum):
     IDENTIFIER = "identifier"

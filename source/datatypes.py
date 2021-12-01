@@ -1,3 +1,4 @@
+from exceptions import *
 from nodes import ArgumentNode, BuiltInClassNode, BuiltInFunctionNode, ExpressionsNode, FunctionAccessNode, KeywordArgumentNode, VarAccessNode
 from scope import Scope
 
@@ -10,6 +11,7 @@ class DataType:
         self.name = name
         self.static = False
         self.specials = Scope()
+        self.pos = None
 
 
     def set_pos(self, pos):
@@ -29,27 +31,9 @@ class Number(DataType):
     def __init__(self, value):
         super().__init__(TYPE_SCOPE, value, self.__class__.__name__)
         self.pos = None
-        BuiltIn.func_assign(self.specials, Number.__name__, ["object"], [], Number.Func_Cast_Number)
-        BuiltIn.func_assign(self.specials, Bool.__name__, ["object"], [], Number.Func_Cast_Bool)
-        BuiltIn.func_assign(self.specials, String.__name__, ["object"], [], Number.Func_Cast_String)
-
-
-    @staticmethod
-    def Func_Cast_Number(_, scope):
-        object = scope.access("object")
-        return object
-
-
-    @staticmethod
-    def Func_Cast_Bool(_, scope):
-        object = scope.access("object")
-        return BoolCache(bool(object.value))
-
-
-    @staticmethod
-    def Func_Cast_String(_, scope):
-        object = scope.access("object")
-        return String(scope.copy(), str(object.value)).set_pos(object.pos)
+        BuiltIn.func_assign(self.specials, Number.__name__, ["object"], [], Number.Special_Cast_Number)
+        BuiltIn.func_assign(self.specials, Bool.__name__, ["object"], [], Number.Special_Cast_Bool)
+        BuiltIn.func_assign(self.specials, String.__name__, ["object"], [], Number.Special_Cast_String)
 
 
     @staticmethod
@@ -59,7 +43,26 @@ class Number(DataType):
         if type(value) == Number:
             return NumberCache(value.value)
         
-        raise Exception("Cannot cast value to Number.")
+        from runner import reporter
+        reporter.report(KSTypeException(f"cannot use type '{value.name}' to initialize {Number.__name__}."))
+
+
+    @staticmethod
+    def Special_Cast_Number(_, scope):
+        object = scope.access("object")
+        return object
+
+
+    @staticmethod
+    def Special_Cast_Bool(_, scope):
+        object = scope.access("object")
+        return BoolCache(bool(object.value))
+
+
+    @staticmethod
+    def Special_Cast_String(_, scope):
+        object = scope.access("object")
+        return String(scope.inherit(), str(object.value)).set_pos(object.pos)
 
 
     def __pos__(self):
@@ -288,27 +291,9 @@ class Bool(DataType):
     def __init__(self, value):
         super().__init__(TYPE_SCOPE, value, self.__class__.__name__)
         self.pos = None
-        BuiltIn.func_assign(self.specials, Number.__name__, ["object"], [], Bool.Func_Cast_Number)
-        BuiltIn.func_assign(self.specials, Bool.__name__, ["object"], [], Bool.Func_Cast_Bool)
-        BuiltIn.func_assign(self.specials, String.__name__, ["object"], [], Bool.Func_Cast_String)
-
-
-    @staticmethod
-    def Func_Cast_Number(_, scope):
-        object = scope.access("object")
-        return NumberCache(int(object.value))
-
-
-    @staticmethod
-    def Func_Cast_Bool(_, scope):
-        object = scope.access("object")
-        return object
-
-
-    @staticmethod
-    def Func_Cast_String(_, scope):
-        object = scope.access("object")
-        return String(scope.copy(), str(object.value)).set_pos(object.pos)
+        BuiltIn.func_assign(self.specials, Number.__name__, ["object"], [], Bool.Special_Cast_Number)
+        BuiltIn.func_assign(self.specials, Bool.__name__, ["object"], [], Bool.Special_Cast_Bool)
+        BuiltIn.func_assign(self.specials, String.__name__, ["object"], [], Bool.Special_Cast_String)
 
 
     @staticmethod
@@ -318,7 +303,26 @@ class Bool(DataType):
         if type(value) == Bool:
             return BoolCache(value.value)
         
-        raise Exception("Cannot cast value to Bool.")
+        from runner import reporter
+        reporter.report(KSTypeException(f"cannot use type '{value.name}' to initialize {Bool.__name__}."))
+
+
+    @staticmethod
+    def Special_Cast_Number(_, scope):
+        object = scope.access("object")
+        return NumberCache(int(object.value))
+
+
+    @staticmethod
+    def Special_Cast_Bool(_, scope):
+        object = scope.access("object")
+        return object
+
+
+    @staticmethod
+    def Special_Cast_String(_, scope):
+        object = scope.access("object")
+        return String(scope.inherit(), str(object.value)).set_pos(object.pos)
 
 
     def __eq__(self, other):
@@ -336,7 +340,7 @@ class Bool(DataType):
 
 
     def __repr__(self):
-        return "true" if self.value == True else "false"
+        return "true" if self.value else "false"
 
 
 class String(DataType):
@@ -345,29 +349,11 @@ class String(DataType):
         self.scope.assign("this", self)
 
         for b in String.bound:
-            self.scope.assign(b.name, Function(self.scope, b.name, b.args, b.expressions).set_pos(None))
+            self.scope.assign(b.name, Function(self.scope, b.name, b.args, b.expressions))
 
-        BuiltIn.func_assign(self.specials, Number.__name__, ["object"], [], String.Func_Cast_Number)
-        BuiltIn.func_assign(self.specials, Bool.__name__, ["object"], [], String.Func_Cast_Bool)
-        BuiltIn.func_assign(self.specials, String.__name__, ["object"], [], String.Func_Cast_String)
-
-
-    @staticmethod
-    def Func_Cast_Number(_, scope):
-        object = scope.access("object")
-        return NumberCache(int(object.value))
-
-
-    @staticmethod
-    def Func_Cast_Bool(_, scope):
-        object = scope.access("object")
-        return BoolCache(bool(object.value))
-
-
-    @staticmethod
-    def Func_Cast_String(_, scope):
-        object = scope.access("object")
-        return object.copy()
+        BuiltIn.func_assign(self.specials, Number.__name__, ["object"], [], String.Special_Cast_Number)
+        BuiltIn.func_assign(self.specials, Bool.__name__, ["object"], [], String.Special_Cast_Bool)
+        BuiltIn.func_assign(self.specials, String.__name__, ["object"], [], String.Special_Cast_String)
 
 
     @staticmethod
@@ -377,12 +363,31 @@ class String(DataType):
         if type(value) == String:
             return String(scope, value.value)
 
-        raise Exception("Cannot cast value to String.")
+        from runner import reporter
+        reporter.report(KSTypeException(f"cannot use type '{value.name}' to initialize {String.__name__}."))
+
+
+    @staticmethod
+    def Special_Cast_Number(_, scope):
+        object = scope.access("object")
+        return NumberCache(int(object.value))
+
+
+    @staticmethod
+    def Special_Cast_Bool(_, scope):
+        object = scope.access("object")
+        return BoolCache(bool(object.value))
+
+
+    @staticmethod
+    def Special_Cast_String(_, scope):
+        object = scope.access("object")
+        return object.copy()
 
 
     def __mul__(self, other):
         if isinstance(other, Number):
-            return String(self.value * other.value)
+            return String(self.scope, self.value * other.value)
 
         return NotImplemented
 
@@ -430,7 +435,8 @@ class String(DataType):
 
 
     def __iter__(self):
-        yield from self.value
+        for c in self.value:
+            yield String(self.scope, c)
 
 
 class Array(DataType):
@@ -459,12 +465,10 @@ class Array(DataType):
 
 
     def copy(self):
-        new_value = []
+        if (not isinstance(self.value, range)):
+            return Array(self.scope, [v.copy() for v in self.value]).set_pos(self.pos)
 
-        for v in self.value:
-            new_value.append(v.copy())
-
-        return Array(self.scope, new_value).set_pos(self.pos)
+        return Array(self.scope, self.value).set_pos(self.pos)
 
 
     def __mul__(self, other):
@@ -501,7 +505,7 @@ class Array(DataType):
 
 class Function(DataType):
     def __init__(self, scope, name, args, expressions):
-        self.scope = scope
+        super().__init__(scope)
         self.name = name if name != None else "anonymous"
         self.args = args
         self.expressions = expressions
@@ -544,7 +548,7 @@ class Instance(DataType):
 
     
     def copy(self):
-        instance = Instance(self.scope.clone(), self.name, self.parent).set_pos(self.pos)
+        instance = Instance(self.scope.copy(), self.name, self.parent).set_pos(self.pos)
         instance.specials = self.specials
         return instance
 
@@ -555,17 +559,31 @@ class Instance(DataType):
 
 class Attribute(DataType):
     def __init__(self, scope, assign_expressions, access_expressions):
-        self.scope = scope
+        super().__init__(scope)
         self.assign_expressions = assign_expressions
         self.access_expressions = access_expressions
 
 
     def __repr__(self):
-        return f"<property object>"
+        return "<property object>"
+
+
+class Iterable(DataType):
+    def __init__(self, value):
+        super().__init__(TYPE_SCOPE, value, self.__class__.__name__)
+
+
+    def __iter__(self):
+        yield from self.value
+
+    
+    def __repr__(self):
+        return "<iterable object>"
 
 
 class Null(DataType):
     def __init__(self):
+        super().__init__(None)
         self.value = None
 
 
@@ -612,7 +630,7 @@ class BuiltIn:
         for kw in kw_args:
             total_args.append(KeywordArgumentNode(kw[0], kw[1]))
 
-        scope.assign(func_name, Function(scope.copy(), func_name, total_args, ExpressionsNode([BuiltInFunctionNode(func).set_pos(None)]).set_pos(None)).set_pos(None))
+        scope.assign(func_name, Function(scope.inherit(), func_name, total_args, ExpressionsNode([BuiltInFunctionNode(func)])))
 
 
     @staticmethod
@@ -625,7 +643,7 @@ class BuiltIn:
         for kw in kw_args:
             total_args.append(KeywordArgumentNode(kw[0], kw[1]))
 
-        scope.assign(class_name, Class(scope.copy(), class_name, total_args, ExpressionsNode([BuiltInClassNode(func).set_pos(None)]).set_pos(None), None).set_pos(None))
+        scope.assign(class_name, Class(scope.inherit(), class_name, total_args, ExpressionsNode([BuiltInClassNode(func)]), None))
 
 
     @staticmethod
@@ -648,12 +666,14 @@ class BuiltIn:
 
 
 def NumberCache(n):
-    check_n = int(n) + 255
     as_float = float(n)
 
-    if as_float.is_integer() and -1 < check_n < 510:
-        return NUMBER_TYPES[check_n]
-
+    if as_float.is_integer():
+        try:
+            return NUMBER_TYPES[n]
+        except KeyError:
+            pass
+    
     return Number(n)
 
 
@@ -661,7 +681,7 @@ def BoolCache(v):
     return BOOL_TYPES[0 if v == False else 1]
 
 
-NUMBER_TYPES = [Number(n) for n in range(-255, 256)]
+NUMBER_TYPES = {n: Number(n) for n in range(-255, 256)}
 BOOL_TYPES = [Bool(False), Bool(True)]
 NULL_TYPE = Null()
 

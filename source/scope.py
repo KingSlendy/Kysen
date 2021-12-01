@@ -1,3 +1,5 @@
+from exceptions import KSVariableException
+
 class Scope:
     def __init__(self, parent = None):
         self.parent = parent
@@ -14,9 +16,8 @@ class Scope:
             if self.parent != None:
                 return self.parent.access(key)
             else:
-                from exceptions import KSVariableException
-                from runner import runtime
-                runtime.report(KSVariableException(f"'{key}' not declared in current scope."))
+                from runner import reporter
+                reporter.report(KSVariableException(f"'{key}' not declared in current scope."))
 
         return self.table[key]
 
@@ -25,16 +26,16 @@ class Scope:
         del self.table[key]
 
 
+    def inherit(self):
+        return Scope(self)
+
+
     def clear(self):
         self.parent = None
         self.table = {}
 
 
     def copy(self):
-        return Scope(self)
-
-
-    def clone(self):
         scope = Scope()
         scope.table = dict(self.table)
         scope.parent = self.parent
@@ -49,7 +50,7 @@ class Scope:
                 value = v.copy()
 
                 if type(v) in (Function, Class):
-                    value.scope = scope.copy()
+                    value.scope = scope.inherit()
 
                 scope.assign(k, value)
 

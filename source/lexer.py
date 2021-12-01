@@ -1,6 +1,6 @@
 import string
 from exceptions import *
-from runtime import Position
+from reporter import Position
 from tokens import *
 
 LETTERS = string.ascii_letters
@@ -11,10 +11,10 @@ WHITESPACE = string.whitespace
 
 class Lexer:
     def __init__(self, text):
-        from runner import runtime
+        from runner import reporter
 
         self.text = text
-        self.runtime = runtime
+        self.reporter = reporter
         self.position = -1
         self.current = None
         self.runline = 1
@@ -312,4 +312,4 @@ class Lexer:
                     self.register_token(self.make_number_token())
 
                 case c:
-                    self.runtime.report(KSIllegalCharException(c), Position(self.runline, self.runpos), syntax = True)
+                    self.reporter.report(KSIllegalCharException(c), Position(self.runline, self.runpos), syntax = True)

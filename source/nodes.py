@@ -1,4 +1,8 @@
 class Node:
+    def __init__(self):
+        self.pos = None
+
+
     def set_pos(self, pos):
         self.pos = pos
         return self
@@ -6,6 +10,7 @@ class Node:
 
 class DataTypeNode(Node):
     def __init__(self, value = None):
+        super().__init__()
         self.value = value
         self.typed = False
 
@@ -36,6 +41,7 @@ class ArrayNode(DataTypeNode):
 
 class FunctionNode(DataTypeNode):
     def __init__(self, name, args, expressions, bound):
+        super().__init__()
         self.name = name
         self.args = args
         self.expressions = expressions
@@ -58,11 +64,13 @@ class ClassNode(FunctionNode):
 
 
 class NullNode(DataTypeNode):
-    pass
+    def __init__(self):
+        super().__init__()
 
 
 class VarAssignNode(Node):
     def __init__(self, name, expression):
+        super().__init__()
         self.name = name
         self.expression = expression
 
@@ -73,6 +81,7 @@ class VarAssignNode(Node):
 
 class VarAccessNode(Node):
     def __init__(self, name):
+        super().__init__()
         self.name = name
 
 
@@ -80,29 +89,9 @@ class VarAccessNode(Node):
         return f"VAR ACCESS: {self.name}"
 
 
-class AttributeNode(DataTypeNode):
-    def __init__(self, name, assign_expressions, access_expressions):
-        self.name = name
-        self.assign_expressions = assign_expressions
-        self.access_expressions = access_expressions
-
-
-    def __repr__(self):
-        return f"ATTRIBUTE: {{ ASSIGN = {self.assign_expressions} ACCESS = {self.access_expressions} }}"
-
-
-class AccessorNode(Node):
-    def __init__(self, node, index_expression):
-        self.node = node
-        self.index_expression = index_expression
-
-    
-    def __repr__(self):
-        return f"ACCESSOR: ({self.node}, {self.index_expression})"
-
-
-class AssignerNode(Node):
+class BracketAssignNode(Node):
     def __init__(self, node, index_expression, value_expression):
+        super().__init__()
         self.node = node
         self.index_expression = index_expression
         self.value_expression = value_expression
@@ -112,8 +101,20 @@ class AssignerNode(Node):
         return f"ASSIGNER: ({self.node}, {self.index_expression}) = {self.value_expression}"
 
 
+class BracketAccessNode(Node):
+    def __init__(self, node, index_expression):
+        super().__init__()
+        self.node = node
+        self.index_expression = index_expression
+
+    
+    def __repr__(self):
+        return f"BRACKET ACCESS: ({self.node}, {self.index_expression})"
+
+
 class FunctionAccessNode(Node):
     def __init__(self, node, args):
+        super().__init__()
         self.node = node
         self.args = args
 
@@ -133,6 +134,7 @@ class ClassAccessNode(FunctionAccessNode):
 
 class PropertyAccessNode(Node):
     def __init__(self, node, property):
+        super().__init__()
         self.node = node
         self.property = property
 
@@ -143,6 +145,7 @@ class PropertyAccessNode(Node):
 
 class ArgumentNode(Node):
     def __init__(self, expression):
+        super().__init__()
         self.expression = expression
 
 
@@ -152,6 +155,7 @@ class ArgumentNode(Node):
 
 class KeywordArgumentNode(Node):
     def __init__(self, name, expression):
+        super().__init__()
         self.name = name
         self.expression = expression
 
@@ -160,8 +164,21 @@ class KeywordArgumentNode(Node):
         return f"KEYWORD ARGUMENT: {self.name} = {self.expression}"
 
 
+class AttributeNode(DataTypeNode):
+    def __init__(self, name, assign_expressions, access_expressions):
+        super().__init__()
+        self.name = name
+        self.assign_expressions = assign_expressions
+        self.access_expressions = access_expressions
+
+
+    def __repr__(self):
+        return f"ATTRIBUTE: {{ ASSIGN = {self.assign_expressions} ACCESS = {self.access_expressions} }}"
+
+
 class CastNode(Node):
     def __init__(self, name, value):
+        super().__init__()
         self.name = name
         self.value = value
 
@@ -172,6 +189,7 @@ class CastNode(Node):
 
 class ReturnNode(Node):
     def __init__(self, expression):
+        super().__init__()
         self.expression = expression
 
 
@@ -181,6 +199,7 @@ class ReturnNode(Node):
 
 class UnaryOperationNode(Node):
     def __init__(self, right):
+        super().__init__()
         self.right = right
 
 
@@ -206,6 +225,7 @@ class NotNode(UnaryOperationNode):
 
 class BinaryOperationNode(Node):
     def __init__(self, left, right, assignment = False):
+        super().__init__()
         self.left = left
         self.right = right
         self.assignment = assignment
@@ -317,6 +337,7 @@ class OrNode(BinaryOperationNode):
 
 class IfNode(Node):
     def __init__(self, if_clauses, else_expressions):
+        super().__init__()
         self.if_clauses = if_clauses
         self.else_expressions = else_expressions
 
@@ -327,6 +348,7 @@ class IfNode(Node):
 
 class ForNode(Node):
     def __init__(self, identifier, iterable, expressions):
+        super().__init__()
         self.identifier = identifier
         self.iterable = iterable
         self.expressions = expressions
@@ -338,6 +360,7 @@ class ForNode(Node):
 
 class WhileNode(Node):
     def __init__(self, condition, expressions):
+        super().__init__()
         self.condition = condition
         self.expressions = expressions
 
@@ -355,12 +378,14 @@ class BreakNode(ReturnNode):
     def __init__(self, expression):
         super().__init__(expression)
 
+
     def __repr__(self):
         return f"BREAK {self.expression}"
 
 
 class StaticNode(Node):
     def __init__(self, node):
+        super().__init__()
         self.node = node
 
 
@@ -370,6 +395,7 @@ class StaticNode(Node):
 
 class SpecialFunctionNode(Node):
     def __init__(self, func):
+        super().__init__()
         self.func = func
 
     
@@ -379,6 +405,7 @@ class SpecialFunctionNode(Node):
 
 class BuiltInFunctionNode(Node):
     def __init__(self, expressions):
+        super().__init__()
         self.expressions = expressions
 
 
@@ -388,6 +415,7 @@ class BuiltInFunctionNode(Node):
 
 class BuiltInClassNode(Node):
     def __init__(self, expressions):
+        super().__init__()
         self.expressions = expressions
 
 
@@ -397,6 +425,7 @@ class BuiltInClassNode(Node):
 
 class ExpressionsNode(Node):
     def __init__(self, expressions):
+        super().__init__()
         self.expressions = expressions
 
 
@@ -423,8 +452,8 @@ class ExpressionsNode(Node):
         return f"EXPRS: ({self.expressions})"
 
 
-NUMBER_NODES = [NumberNode(n).set_pos(None) for n in range(-255, 256)]
-BOOL_NODES = [BoolNode(False).set_pos(None), BoolNode(True).set_pos(None)]
-NULL_NODE = NullNode().set_pos(None)
+NUMBER_NODES = {n: NumberNode(n) for n in range(-255, 256)}
+BOOL_NODES = [BoolNode(False), BoolNode(True)]
+NULL_NODE = NullNode()
 
 CONTINUE_NODE = ContinueNode()

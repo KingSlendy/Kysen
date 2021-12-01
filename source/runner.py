@@ -1,9 +1,9 @@
 from interpreter import Interpreter
 from lexer import Lexer
 from parser import Parser
-from runtime import Runtime
+from reporter import Reporter
 
-runtime = Runtime()
+reporter = Reporter()
 
 class Runner:
     @staticmethod
@@ -13,7 +13,7 @@ class Runner:
         if text == "":
             return None
 
-        runtime.update(filename, text)
+        reporter.update(filename, text)
         lexer = Lexer(text)
         #print(lexer.tokens)
 
@@ -21,7 +21,7 @@ class Runner:
             return None
 
         parser = Parser(lexer.tokens)
-        #print(parser.tree)
+        print(parser.tree)
         interpreter = Interpreter(parser.tree)
 
         if len(interpreter.result) == 1:

@@ -1,3 +1,24 @@
+
+class Test() : String("a") {
+
+}
+
+a = "a";
+Console.Print(a.value);
+t = new Test();
+Console.Print(t.value);
+
+#>
+time = Timer();
+r = new Range(100000);
+
+for (i in r) {
+    a = 1 + 1;
+}
+
+Console.Print(Timer() - time);
+<#
+
 #>
 class Test(value) {
     this.value = value;

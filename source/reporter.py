@@ -1,6 +1,6 @@
 from exceptions import RuntimeException
 
-class Runtime:
+class Reporter:
     def __init__(self, filename = "", text = "", unittest = False):
         self.filename = filename
         self.text = text.split("\n")

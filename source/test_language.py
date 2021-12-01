@@ -6,12 +6,12 @@ from lexer import Lexer
 from parser import Parser
 
 def language(text):
-    from runner import runtime
+    from runner import reporter
 
     if text == "":
         return None
 
-    runtime.update("<unittest>", text, unittest = True)
+    reporter.update("<unittest>", text, unittest = True)
     lexer = Lexer(text)
 
     if len(lexer.tokens) == 1:
@@ -491,9 +491,9 @@ class TestLanguage(unittest.TestCase):
         self.assertEqual(language("""
             a = 50;
             
-            if a == 10
+            if (a == 10)
                 a = 200;
-            elif a == 30
+            elif (a == 30)
                 a = 500;
             else
                 a = 300;
@@ -504,7 +504,7 @@ class TestLanguage(unittest.TestCase):
 
     def test_for_statement(self):
         self.assertEqual(language("""
-            numbers = Range(1, 6);
+            numbers = new Range(1, 6);
             result = 0;
             
             for (n in numbers) {

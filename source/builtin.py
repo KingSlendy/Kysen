@@ -10,8 +10,8 @@ def Class_Console(_, scope):
 def Class_Console_Func_Print(interpreter, scope):
     value = scope.access("value")
 
-    if type(value) == Instance and "String" in value.specials:
-        value = interpreter.visit(None, scope, CastNode("String", value.set_pos(None)).set_pos(None))
+    if type(value) == Instance and String.__name__ in value.specials:
+        value = interpreter.visit(None, scope, CastNode(String.__name__, value))
         
     print(value)
 
@@ -20,7 +20,7 @@ def Func_Timer(_, scope):
     return NumberCache(time())
 
 
-def Func_Range(_, scope):
+def Class_Range(_, scope):
     start = scope.access("start")
     finish = scope.access("finish")
     step = scope.access("step")
@@ -30,11 +30,11 @@ def Func_Range(_, scope):
         start = NumberCache(0)
 
     if step.value == 0:
-        from runner import runtime
-        runtime.report(KSArgumentException("'step' argument must be non-zero."))
+        from runner import reporter
+        reporter.report(KSArgumentException("'step' argument must be non-zero."))
     
-    r = [NumberCache(n) for n in range(start.value, finish.value, step.value)]
-    return Array(scope.copy(), r).set_pos(None)
+    #r = [NumberCache(n) for n in range(start.value, finish.value, step.value)]
+    return Iterable(range(start.value, finish.value, step.value))
 
 
 def builtin_add_all(scope):
@@ -52,10 +52,9 @@ def builtin_add_all(scope):
     # - Array - #
     BuiltIn.class_assign(scope, "Array", ["value"], [], Array.Constructor)
 
-    # Misc
-    BuiltIn.func_assign(scope, "Range", ["start"], [("finish", NULL_TYPE), ("step", NumberCache(1))], Func_Range)
-    BuiltIn.func_assign(scope, "Timer", [], [], Func_Timer)
-
     # - Global - #
     BuiltIn.class_assign(scope, "Console", [], [], Class_Console)
     BuiltIn.static_assign(scope, "Console", "Print", ["value"], [], Class_Console_Func_Print)
+
+    BuiltIn.class_assign(scope, "Range", ["start"], [("finish", NULL_TYPE), ("step", NumberCache(1))], Class_Range)
+    BuiltIn.func_assign(scope, "Timer", [], [], Func_Timer)
