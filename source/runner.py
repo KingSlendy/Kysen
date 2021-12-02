@@ -21,7 +21,7 @@ class Runner:
             return None
 
         parser = Parser(lexer.tokens)
-        print(parser.tree)
+        #print(parser.tree)
         interpreter = Interpreter(parser.tree)
 
         if len(interpreter.result) == 1:

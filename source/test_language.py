@@ -143,6 +143,18 @@ class TestLanguage(unittest.TestCase):
             a[0];
         """), 100)
 
+        self.assertEqual(language("""
+            a = [0, 1, 2, 3, 4];
+            a[0] += 100;
+            a[0];
+        """), 100)
+
+        self.assertEqual(language("""
+            a = [[0, 1], [2, 3]];
+            a[0][0] += 100;
+            a[0][0];
+        """), 100)
+
 
     def test_classes(self):
         self.assertEqual(language("""
@@ -348,6 +360,26 @@ class TestLanguage(unittest.TestCase):
             t2.value = 254;
             <Number>t2;
         """), 254)
+
+        self.assertEqual(language("""
+            class Test() {
+                this.ttt = 333;
+
+                this.TTT = {
+                    assign {
+                        ttt = value;
+                    }
+
+                    access {
+                        return ttt + 100;
+                    }
+                }
+            }
+
+            t = new Test();
+            t.TTT += 200;
+            t.TTT;
+        """), 733)
         
 
     def test_unary_operations(self):
@@ -382,6 +414,18 @@ class TestLanguage(unittest.TestCase):
         self.assertTrue(language("true || false;"))
         self.assertEqual(language("40 / 10 / 2;"), 2)
         self.assertEqual(language("((2 ** 4 / 2 + 2) + 1 + 1 + 1 + 1 + 1 + 1 + 1 - (3 ** 3 / 9)) * (0.245 + 0.755) - ((-(10 ** 3 / 1000) + (3 * 25 / 5)) - 1);"), 1)
+
+        self.assertEqual(language("""
+            a = 10;
+            a += 100;
+            a;
+        """), 110)
+
+        self.assertEqual(language("""
+            a = 10;
+            a *= 100;
+            a;
+        """), 1000)
 
 
     def test_if_statement(self):
@@ -504,7 +548,7 @@ class TestLanguage(unittest.TestCase):
 
     def test_for_statement(self):
         self.assertEqual(language("""
-            numbers = new Range(1, 6);
+            numbers = Range(1, 6);
             result = 0;
             
             for (n in numbers) {
@@ -584,7 +628,7 @@ class TestLanguage(unittest.TestCase):
             class Date() {
                 seconds = 0;
 
-                Hour {
+                Hour = {
                     assign {
                         seconds = (value % 24) * 3600;
                     }
@@ -691,7 +735,7 @@ class TestLanguage(unittest.TestCase):
             class Iterable() {
                 this.a = 100;
 
-                this.Test {
+                this.Test = {
                     assign this.a = value;
                     access => this.a;
                 }
@@ -759,17 +803,17 @@ class TestLanguage(unittest.TestCase):
             class Day(seconds) {
                 this.Seconds = seconds;
 
-                this.Minutes {
+                this.Minutes = {
                     assign this.Seconds = value * 60;
                     access => this.Seconds / 60;
                 }
 
-                this.Hours {
+                this.Hours = {
                     assign this.Seconds = value * 3600;
                     access => this.Seconds / 3600;
                 }
 
-                this.Day {
+                this.Days = {
                     assign this.Seconds = value * 3600 * 24;
                     access => this.Seconds / 3600 / 24;
                 }

@@ -68,17 +68,6 @@ class NullNode(DataTypeNode):
         super().__init__()
 
 
-class VarAssignNode(Node):
-    def __init__(self, name, expression):
-        super().__init__()
-        self.name = name
-        self.expression = expression
-
-    
-    def __repr__(self):
-        return f"VAR ASSIGN: {self.name} = {self.expression}"
-
-
 class VarAccessNode(Node):
     def __init__(self, name):
         super().__init__()
@@ -89,16 +78,14 @@ class VarAccessNode(Node):
         return f"VAR ACCESS: {self.name}"
 
 
-class BracketAssignNode(Node):
-    def __init__(self, node, index_expression, value_expression):
-        super().__init__()
-        self.node = node
-        self.index_expression = index_expression
-        self.value_expression = value_expression
+class VarAssignNode(VarAccessNode):
+    def __init__(self, name, expression):
+        super().__init__(name)
+        self.expression = expression
 
     
     def __repr__(self):
-        return f"ASSIGNER: ({self.node}, {self.index_expression}) = {self.value_expression}"
+        return f"VAR ASSIGN: {self.name} = {self.expression}"
 
 
 class BracketAccessNode(Node):
@@ -110,6 +97,16 @@ class BracketAccessNode(Node):
     
     def __repr__(self):
         return f"BRACKET ACCESS: ({self.node}, {self.index_expression})"
+
+
+class BracketAssignNode(BracketAccessNode):
+    def __init__(self, node, index_expression, value_expression):
+        super().__init__(node, index_expression)
+        self.value_expression = value_expression
+
+    
+    def __repr__(self):
+        return f"BRACKET ASSIGN: ({self.node}, {self.index_expression}) = {self.value_expression}"
 
 
 class FunctionAccessNode(Node):
@@ -140,7 +137,17 @@ class PropertyAccessNode(Node):
 
     
     def __repr__(self):
-        return f"PROPERY ACCESS: ({self.node}, {self.property})"
+        return f"PROPERTY ACCESS: ({self.node}, {self.property})"
+
+
+class PropertyAssignNode(PropertyAccessNode):
+    def __init__(self, node, property, value_expression):
+        super().__init__(node, property)
+        self.value_expression = value_expression
+
+    
+    def __repr__(self):
+        return f"PROPERTY ASSIGN: ({self.node}, {self.property}) = {self.value_expression}"
 
 
 class ArgumentNode(Node):
@@ -165,9 +172,8 @@ class KeywordArgumentNode(Node):
 
 
 class AttributeNode(DataTypeNode):
-    def __init__(self, name, assign_expressions, access_expressions):
+    def __init__(self, assign_expressions, access_expressions):
         super().__init__()
-        self.name = name
         self.assign_expressions = assign_expressions
         self.access_expressions = access_expressions
 

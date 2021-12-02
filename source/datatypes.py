@@ -574,7 +574,8 @@ class Iterable(DataType):
 
 
     def __iter__(self):
-        yield from self.value
+        for i in self.value:
+            yield NumberCache(i)
 
     
     def __repr__(self):

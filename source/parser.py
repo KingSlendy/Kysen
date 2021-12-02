@@ -177,6 +177,12 @@ class Parser:
 
                 return node
 
+            case TOKENS.LCURLY:
+                self.advance()
+
+                if self.current.value in (KEYWORDS.ASSIGN, KEYWORDS.ACCESS):
+                    return self.parse_attribute_expression()
+
             case TOKENS.LESS:
                 token = self.token_advance()
                 name = self.necessary_token_advance(TOKENS.IDENTIFIER).value
@@ -253,20 +259,8 @@ class Parser:
                 token = self.current
                 name = self.necessary_token_advance(TOKENS.IDENTIFIER).value
                 node = VarAccessNode(name).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
-                #typed = None
-
-                #if self.current.type == TOKENS.DOTDOT:
-                #    typed = self.necessary_token_advance(TOKENS.IDENTIFIER).value
 
                 match self.current.type:
-                    case TOKENS.ASSIGNMENT:
-                        operation_node = BINARY_OPERATOR_NODES[self.token_advance().value]
-                        right = self.parse_binary_expression()
-                        return operation_node(node, right, assignment = True).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
-
-                    case TOKENS.LCURLY:
-                        return self.parse_attribute_expression(node)
-
                     case TOKENS.LBRACKET:
                         node = self.parse_bracket_access(node)
 
@@ -276,11 +270,16 @@ class Parser:
                     case TOKENS.DOT:
                         node = self.parse_property_access(node)
 
-                if self.current.type == TOKENS.EQUALS:
+                if self.current.type in (TOKENS.EQUALS, TOKENS.ASSIGNMENT):
+                    operation_node = None
+
+                    if self.current.type == TOKENS.ASSIGNMENT:
+                        operation_node = BINARY_OPERATOR_NODES[self.current.value]
+
                     self.advance()
                     expression = self.parse_binary_expression()
-                    node = self.parse_assigners(node, expression)
-                    
+                    node = self.parse_assigners(node, expression, assignment_node = operation_node)
+
                 return node
 
             case t if t in (TOKENS.ADD, TOKENS.SUBT, TOKENS.NOT, TOKENS.BITNOT):
@@ -338,7 +337,7 @@ class Parser:
         return (condition, expressions)
 
 
-    def parse_if_statement(self):
+    def parse_if_statement(self) -> IfNode:
         token = self.current
         if_clauses = []
 
@@ -353,7 +352,7 @@ class Parser:
         return IfNode(if_clauses, else_expressions).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
 
 
-    def parse_for_statement(self):
+    def parse_for_statement(self) -> ForNode:
         token = self.token_advance()
         self.ignore_token_advance(TOKENS.LPAREN)
         self.necessary_token_check(TOKENS.IDENTIFIER)
@@ -366,13 +365,13 @@ class Parser:
         return ForNode(identifier.name, iterable, expressions).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
 
 
-    def parse_while_statement(self):
+    def parse_while_statement(self) -> WhileNode:
         token = self.current
         (condition, expressions) = self.parse_statement()
         return WhileNode(condition, expressions).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
 
 
-    def parse_function_statement(self, special = False):
+    def parse_function_statement(self, special = False) -> FunctionNode:
         token = self.token_advance()
         name = None
         bound_name = None
@@ -395,7 +394,7 @@ class Parser:
         return FunctionNode(name, args, expressions, bound_name).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
 
     
-    def parse_class_statement(self):
+    def parse_class_statement(self) -> ClassNode:
         token = self.token_advance()
         name = self.necessary_token_advance(TOKENS.IDENTIFIER).value
         args = []
@@ -445,10 +444,8 @@ class Parser:
         self.necessary_token_advance(TOKENS.RPAREN)
 
 
-    def parse_attribute_expression(self, node):
+    def parse_attribute_expression(self) -> AttributeNode:
         token = self.current
-        name = node.name
-        self.advance()
 
         if self.current.value == KEYWORDS.ASSIGN:
             self.advance()
@@ -466,10 +463,10 @@ class Parser:
             self.reporter.pos = self.current.pos
             self.reporter.report(KSSyntaxException("expected keyword(s) 'assign', 'access'."), syntax = True)
 
-        return AttributeNode(name, assign_expressions, access_expressions).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
+        return AttributeNode(assign_expressions, access_expressions).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
 
 
-    def parse_bracket_access(self, node):
+    def parse_bracket_access(self, node) -> BracketAccessNode:
         token = self.current
         accessors = []
 
@@ -491,7 +488,7 @@ class Parser:
         return node
 
     
-    def parse_function_access(self, node):
+    def parse_function_access(self, node) -> FunctionAccessNode:
         args = []
         index = 0
 
@@ -517,13 +514,13 @@ class Parser:
         return node
 
 
-    def parse_property_access(self, node):
+    def parse_property_access(self, node) -> PropertyAccessNode:
         accessors = []
 
         while self.current.type == TOKENS.DOT:
             self.advance()
             self.necessary_token_check(TOKENS.IDENTIFIER)
-            accessors.append(self.parse_factor())
+            accessors.append(VarAccessNode(self.token_advance().value).set_pos(node.pos))
 
         for a in accessors:
             node = PropertyAccessNode(node, a).set_pos(node.pos)
@@ -538,11 +535,19 @@ class Parser:
         return node
 
 
-    def parse_assigners(self, node, value_expression):
-        try:
-            return BracketAssignNode(node.node, node.index_expression, value_expression).set_pos(node.pos)
-        except:
-            return VarAssignNode(node.name, value_expression).set_pos(node.pos)
+    def parse_assigners(self, node, value_expression, assignment_node = None):
+        if assignment_node != None:
+            value_expression = assignment_node(node, value_expression).set_pos(node.pos)
+
+        match node:
+            case n if type(n) == VarAccessNode:
+                return VarAssignNode(node.name, value_expression).set_pos(node.pos)
+
+            case n if type(n) == BracketAccessNode:
+                return BracketAssignNode(node.node, node.index_expression, value_expression).set_pos(node.pos)
+
+            case n if type(n) == PropertyAccessNode:
+                return PropertyAssignNode(node.node, node.property, value_expression).set_pos(node.pos)
 
 
     def parse_binary_expression(self, priority = 0):

@@ -54,9 +54,6 @@ class Interpreter:
 
                 value = self.visit(context, old_scope, n.expression)
 
-                #if not issubclass(type(value), DataType):
-                #    raise Exception(f"Cannot assign a non-Type value to variable '{n.name}'.")
-
                 if n.name in scope:
                     attribute = scope.access(n.name)
 
@@ -210,29 +207,34 @@ class Interpreter:
                 context = None
                 return instance if instance != None else NULL_TYPE
 
+            case n if type(n) == PropertyAssignNode:
+                identifier = self.visit(context, scope, n.node)
+
+                if scope != identifier.scope and not n.property.name in identifier.scope:
+                    self.reporter.report(KSPropertyException(f"cannot assign uninitialized property '{n.property.name}' in '{identifier.name}'."))
+
+                return self.visit(context, identifier.scope, VarAssignNode(n.property.name, n.value_expression))
+
             case n if type(n) == PropertyAccessNode:
                 identifier = self.visit(context, scope, n.node)
 
                 #if type(identifier) not in (String, Array, Class, Instance):
                 #    self.reporter.report(KSPropertyException(f"cannot check properties inside object of type '{identifier.name}'."), identifier.pos)
 
-                if type(n.property) == VarAssignNode:
-                    if scope != identifier.scope and not n.property.name in identifier.scope:
-                        self.reporter.report(KSPropertyException(f"cannot assign uninitialized property '{n.property.name}' in '{identifier.name}'."))
-
                 check_property = n.property
 
-                while type(check_property) not in (VarAssignNode, VarAccessNode, AttributeNode):
+                while type(check_property) not in (VarAccessNode, AttributeNode):
                     check_property = check_property.node
 
-                if (n.node.name != "this" or type(check_property) == VarAccessNode) and check_property.name not in identifier.scope:
+                #print(n.node)
+
+                if (type(check_property) == VarAccessNode) and check_property.name not in identifier.scope:
                     self.reporter.report(KSPropertyException(f"{'Instance of type ' if type(identifier) == Instance else 'Class '}'{identifier.name}' has no property '{check_property.name}'."))
 
                 if last_scope == None:
                     last_scope = scope
 
-                value = self.visit({"name": identifier.name, "instance": type(identifier) == Instance}, identifier.scope, n.property)
-                return value
+                return self.visit({"name": identifier.name, "instance": type(identifier) == Instance}, identifier.scope, n.property)
 
             case n if isinstance(n, DataTypeNode):
                 match n:
@@ -292,8 +294,7 @@ class Interpreter:
                         return NULL_TYPE
 
                     case _ if type(n) == AttributeNode:
-                        value = Attribute(scope, n.assign_expressions, n.access_expressions).set_pos(n.pos)
-                        return scope.assign(n.name, value)
+                        return Attribute(scope, n.assign_expressions, n.access_expressions).set_pos(n.pos)
 
                     case _:
                         cast_type = {
@@ -336,10 +337,6 @@ class Interpreter:
                         return ~right
 
             case n if isinstance(n, BinaryOperationNode):
-                if n.assignment:
-                    scope.assign(n.left.name, self.visit(context, scope, type(n)(n.left, n.right).set_pos(n.pos)))
-                    return None
-
                 left = self.visit(context, scope, n.left)
                 right = self.visit(context, scope, n.right)
 
@@ -460,9 +457,6 @@ class Interpreter:
                 iterable = self.visit(context, scope, n.iterable)
 
                 for x in iterable:
-                    if type(x) == int:
-                        x = NumberCache(x)
-
                     scope.assign(n.identifier, x)
                     value = self.visit(context, scope, n.expressions)
 
