@@ -1,5 +1,4 @@
 
-
 #>
 class Test() : String("a") {
 

@@ -46,6 +46,28 @@ class TestLanguage(unittest.TestCase):
             b[0];
         """), 100)
 
+        self.assertEqual(language("""
+            a = [0, 1, 2, 3, 4];
+            a[0] += 100;
+            a[0];
+        """), 100)
+
+        self.assertEqual(language("""
+            a = [[0, 1], [2, 3]];
+            a[0][0] += 100;
+            a[0][0];
+        """), 100)
+
+        self.assertEqual(language("""
+            class Test() {
+                this.value = 10;
+            }
+
+            t = [new Test()];
+
+            t[0].value;
+        """), 10)
+
 
     def test_functions(self):
         self.assertEqual(language("""
@@ -144,16 +166,14 @@ class TestLanguage(unittest.TestCase):
         """), 100)
 
         self.assertEqual(language("""
-            a = [0, 1, 2, 3, 4];
-            a[0] += 100;
-            a[0];
-        """), 100)
+            class Test() {
+                this.value = 10;
+            }
 
-        self.assertEqual(language("""
-            a = [[0, 1], [2, 3]];
-            a[0][0] += 100;
-            a[0][0];
-        """), 100)
+            func Call() => new Test();
+
+            Call().value;
+        """), 10)
 
 
     def test_classes(self):
