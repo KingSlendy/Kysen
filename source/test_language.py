@@ -175,6 +175,11 @@ class TestLanguage(unittest.TestCase):
             Call().value;
         """), 10)
 
+        self.assertEqual(language("""
+            sign = func(n) => (n == 0) ? 0 : (n > 0) ? 1 : -1;
+            sign(100);
+        """), 1)
+
 
     def test_classes(self):
         self.assertEqual(language("""
@@ -564,6 +569,11 @@ class TestLanguage(unittest.TestCase):
             
             a;
         """), 300)
+
+        self.assertEqual(language("""
+            a = (2 == 2) ? 10 : 20;
+            a;
+        """), 10)
 
 
     def test_for_statement(self):

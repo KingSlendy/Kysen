@@ -535,7 +535,7 @@ class Parser:
         return node
 
 
-    def parse_assigners(self, node, value_expression, assignment_node = None):
+    def parse_assigners(self, node, value_expression, assignment_node = None) -> Node:
         if assignment_node != None:
             value_expression = assignment_node(node, value_expression).set_pos(node.pos)
 
@@ -550,7 +550,7 @@ class Parser:
                 return PropertyAssignNode(node.node, node.property, value_expression).set_pos(node.pos)
 
 
-    def parse_binary_expression(self, priority = 0):
+    def parse_binary_expression(self, priority = 0) -> Node:
         token = self.current
         left = self.parse_factor()
 
@@ -560,7 +560,19 @@ class Parser:
             operation_node = BINARY_OPERATOR_NODES[operator.type]
             left = operation_node(left, right).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
 
+        if self.current.type == TOKENS.QUESTIONMARK:
+            left = self.parse_ternary_expression(left)
+
         return left
+
+
+    def parse_ternary_expression(self, node) -> TernaryNode:
+        token = self.current
+        self.advance()
+        true_expression = self.parse_binary_expression()
+        self.necessary_token_advance(TOKENS.COLON)
+        false_expression = self.parse_binary_expression()
+        return TernaryNode(node, true_expression, false_expression).set_pos(Position(token.pos.line, token.pos.start, self.current.pos.end))
 
 
     def parse_expressions(self, once = False):

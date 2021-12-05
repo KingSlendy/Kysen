@@ -43,6 +43,7 @@ class TOKENS(Enum):
     ARROW = "=>"
     COLON = ":"
     SEMICOLON = ";"
+    QUESTIONMARK = "?"
     WHITESPACE = "whitespace"
     ENDOFFILE = "endoffile"
 

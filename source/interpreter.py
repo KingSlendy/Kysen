@@ -191,13 +191,13 @@ class Interpreter:
                 value = self.visit({"instance": instance}, scope, identifier.expressions)
 
                 if type(value) == ReturnNode:
-                    if value.expression != None and type(value.expression) != DataType:
-                        value = self.visit(context, scope, value.expression)
-                    else:
-                        value = value.expression
+                    value = value.expression
 
-                        if value is None:
-                            value = NULL_TYPE
+                    if value is not None and type(value) != DataType:
+                        value = self.visit(context, scope, value)
+                    
+                    if value is None:
+                        value = NULL_TYPE
                     
                     return value.copy()
 
@@ -448,10 +448,19 @@ class Interpreter:
                     condition = self.visit(context, scope, c)
 
                     if condition.value:
-                        return self.visit(context, scope, e)
+                        self.visit(context, scope, e)
+                        break
                 else:
                     if n.else_expressions != None:
-                        return self.visit(context, scope, n.else_expressions)
+                        self.visit(context, scope, n.else_expressions)
+
+            case n if type(n) == TernaryNode:
+                condition = self.visit(context, scope, n.condition)
+
+                if condition.value:
+                    return self.visit(context, scope, n.true_expression)
+                else:
+                    return self.visit(context, scope, n.false_expression)
 
             case n if type(n) == ForNode:
                 iterable = self.visit(context, scope, n.iterable)

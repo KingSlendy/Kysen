@@ -349,7 +349,19 @@ class IfNode(Node):
 
 
     def __repr__(self):
-        return f"IF ({self.if_clauses[0]}) {self.if_clauses[1]} ELSE {self.else_expressions}"
+        return f"IFS {self.if_clauses} ELSE {self.else_expressions}"
+
+
+class TernaryNode(Node):
+    def __init__(self, condition, true_expression, false_expression):
+        super().__init__()
+        self.condition = condition
+        self.true_expression = true_expression
+        self.false_expression = false_expression
+
+
+    def __repr__(self):
+        return f"TERNARY: {self.condition} ? {self.true_expression} : {self.false_expression}"
 
 
 class ForNode(Node):
