@@ -59,6 +59,10 @@ class Scope:
         return self.table.items()
 
 
+    def __delitem__(self, key):
+        del self.table[key]
+
+
     def __eq__(self, other):
         if isinstance(other, Scope):
             return self.table == other.table

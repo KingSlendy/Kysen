@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 class Node:
     def __init__(self):
         self.pos = None
@@ -6,6 +8,10 @@ class Node:
     def set_pos(self, pos):
         self.pos = pos
         return self
+
+
+    def copy(self):
+        return deepcopy(self)
 
 
 class DataTypeNode(Node):

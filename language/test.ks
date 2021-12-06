@@ -1,4 +1,43 @@
 
+class Test() {
+    this.value = 1234;
+
+    cast String() => <String>this.value;
+}
+
+a = [];
+            
+for (_ in Range(2)) {
+    a.Append(new Test());
+}
+
+a[0][0].value = 10;
+Console.Print(a);
+
+#>
+class Test() {
+    this.value = 1234;
+
+    cast String() => <String>this.value;
+}
+
+class Grid() {
+    this.cells = [];
+    
+    for (r in Range(10)) {
+        this.cells.Append([]);
+    
+        #for (_ in Range(10)) {
+        #    this.cells[r].Append(0);
+        #}
+    }
+    
+    this.cells[0].Append(0);
+}
+
+g = new Grid();
+Console.Print(g.cells);
+
 #>
 class Test() : String("a") {
 

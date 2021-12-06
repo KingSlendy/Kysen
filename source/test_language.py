@@ -68,6 +68,26 @@ class TestLanguage(unittest.TestCase):
             t[0].value;
         """), 10)
 
+        self.assertEqual(language("""
+            b = [0, 1, 2];
+            a = [];
+            a.Append(b);
+            a.Append(b);
+            b[0] = 100;
+            a[0][0];
+        """), 100)
+
+        self.assertEqual(language("""
+            a = [];
+            
+            for (_ in Range(2)) {
+                a.Append([0, 1]);
+            }
+
+            a[0][0] = 10;
+            a[1][0];
+        """), 0)
+
 
     def test_functions(self):
         self.assertEqual(language("""

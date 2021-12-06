@@ -150,12 +150,12 @@ class Interpreter:
                         scope = scope.inherit()
 
                 for i, arg in enumerate(args):
-                    parg = passed_args[i]
+                    p_arg = passed_args[i]
 
-                    if type(parg) == KeywordArgumentNode:
+                    if type(p_arg) == KeywordArgumentNode:
                         self.reporter.report(KSArgumentException(f"expected positional argument '{arg.expression.name}'."))
 
-                    scope.assign(arg.expression.name, self.visit(context, old_scope, parg.expression))
+                    scope.assign(arg.expression.name, self.visit(context, old_scope, p_arg.expression.copy()))
 
                 passed_args = passed_args[len(args):]
                 declared_kw_arguments = []
@@ -164,13 +164,13 @@ class Interpreter:
                     kw_arg = kw_args[i]
 
                     if type(pkw_arg) == ArgumentNode:
-                        scope.assign(kw_arg.name, self.visit(context, old_scope, pkw_arg.expression))
+                        scope.assign(kw_arg.name, self.visit(context, old_scope, pkw_arg.expression.copy()))
                         declared_kw_arguments.append(kw_arg.name)
                     elif type(pkw_arg) == KeywordArgumentNode:
                         if pkw_arg.name in declared_kw_arguments:
                             self.reporter.report(KSArgumentException(f"already declared argument '{pkw_arg.name}'."))
 
-                        scope.assign(pkw_arg.name, self.visit(context, old_scope, pkw_arg.expression))
+                        scope.assign(pkw_arg.name, self.visit(context, old_scope, pkw_arg.expression.copy()))
                         declared_kw_arguments.append(pkw_arg.name)
 
                 for kw_arg in [kw for kw in kw_args if kw.name not in declared_kw_arguments]:
